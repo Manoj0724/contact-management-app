@@ -1,136 +1,111 @@
-// server.js  (inside backend folder)
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const Contact = require("./Contact"); // your Mongoose model
+const Contact = require("./Contact");
 
 const app = express();
 
-// ---------- MIDDLEWARE ----------
-app.use(cors());            // allow frontend (http://localhost:....)
-app.use(express.json());    // parse JSON body
+app.use(cors());
+app.use(express.json());
 
-// ---------- MONGODB CONNECTION ----------
+// ---------- MONGODB ----------
 mongoose
   .connect("mongodb://127.0.0.1:27017/contacts_db")
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("Mongo error:", err));
+  .catch(err => console.error("Mongo error:", err));
 
-// ---------- GET ALL CONTACTS ----------
-app.get("/api/contacts", async (req, res) => {
+
+// ---------- PAGINATION (MUST BE FIRST) ----------
+app.get("/api/contacts/paginate", async (req, res) => {
   try {
-    const contacts = await Contact.find();
-    res.json(contacts); // pure JSON array
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Contact.countDocuments();
+    const contacts = await Contact.find().skip(skip).limit(limit);
+
+    res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      contacts
+    });
   } catch (err) {
-    console.error("GET /api/contacts error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("Pagination error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ---------- SEARCH CONTACTS (BACKEND SEARCH) ----------
+
+// ---------- SEARCH ----------
 app.get("/api/contacts/search", async (req, res) => {
-  try {
-    const q = (req.query.q || "").trim();
+  const q = req.query.q || "";
+  const regex = new RegExp(q, "i");
 
-    // If empty q, just return all contacts
-    if (!q) {
-      const all = await Contact.find();
-      return res.json(all);
-    }
+  const results = await Contact.find({
+    $or: [
+      { firstName: regex },
+      { lastName: regex },
+      { mobile1: regex },
+      { "address.city": regex }
+    ]
+  });
 
-    // Case-insensitive regex
-    const regex = new RegExp(q, "i");
-
-    const results = await Contact.find({
-      $or: [
-        { title: regex },
-        { firstName: regex },
-        { lastName: regex },
-        { mobile1: regex },
-        { mobile2: regex },
-        { "address.city": regex },
-        { "address.state": regex },
-        { "address.pincode": regex },
-      ],
-    });
-
-    res.json(results);
-  } catch (err) {
-    console.error("GET /api/contacts/search error:", err);
-    res.status(500).json({ error: "Search failed" });
-  }
+  res.json(results);
 });
 
-// ---------- GET ONE CONTACT BY ID ----------
+
+// ---------- GET ALL ----------
+app.get("/api/contacts", async (req, res) => {
+  const contacts = await Contact.find();
+  res.json(contacts);
+});
+
+
+// ---------- GET ONE (ALWAYS LAST) ----------
 app.get("/api/contacts/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const contact = await Contact.findById(id);
-
-    if (!contact) {
-      return res.status(404).json({ success: false, error: "Not found" });
-    }
-
-    res.json({ success: true, contact });
-  } catch (err) {
-    console.error("GET /api/contacts/:id error:", err);
-    res.status(500).json({ success: false, error: "Fetch failed" });
-  }
-});
-
-
-// ---------- CREATE NEW CONTACT ----------
-app.post("/api/contacts", async (req, res) => {
-  try {
-    const contact = new Contact(req.body);
-    await contact.save();
-    res.json({ success: true, contact });
-  } catch (err) {
-    console.error("POST /api/contacts error:", err);
-    res.status(500).json({ success: false, error: "Save failed" });
-  }
-});
-
-// ---------- UPDATE CONTACT ----------
-app.put("/api/contacts/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const updated = await Contact.findByIdAndUpdate(id, req.body, {
-      new: true,
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid contact id"
     });
-
-    if (!updated) {
-      return res.status(404).json({ success: false, error: "Not found" });
-    }
-
-    res.json({ success: true, contact: updated });
-  } catch (err) {
-    console.error("PUT /api/contacts/:id error:", err);
-    res.status(500).json({ success: false, error: "Update failed" });
   }
+
+  const contact = await Contact.findById(req.params.id);
+  if (!contact) {
+    return res.status(404).json({ success: false });
+  }
+
+  res.json(contact);
 });
 
-// ---------- DELETE CONTACT ----------
+
+// ---------- CREATE ----------
+app.post("/api/contacts", async (req, res) => {
+  const contact = new Contact(req.body);
+  await contact.save();
+  res.json({ success: true, contact });
+});
+
+
+// ---------- UPDATE ----------
+app.put("/api/contacts/:id", async (req, res) => {
+  const updated = await Contact.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json({ success: true, contact: updated });
+});
+
+
+// ---------- DELETE ----------
 app.delete("/api/contacts/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const deleted = await Contact.findByIdAndDelete(id);
-
-    if (!deleted) {
-      return res.status(404).json({ success: false, error: "Not found" });
-    }
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("DELETE /api/contacts/:id error:", err);
-    res.status(500).json({ success: false, error: "Delete failed" });
-  }
+  await Contact.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
 });
 
-// ---------- START SERVER ----------
+
+// ---------- START ----------
 app.listen(5000, () => {
   console.log("🚀 Server running on http://localhost:5000");
 });
