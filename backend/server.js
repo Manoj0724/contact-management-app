@@ -14,16 +14,38 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("Mongo error:", err));
 
-
-// ---------- PAGINATION (MUST BE FIRST) ----------
+/* ======================================================
+   PAGINATION + SEARCH (THIS IS THE MAIN API YOU USE)
+   ====================================================== */
 app.get("/api/contacts/paginate", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page  = Number(req.query.page)  || 1;
+    const limit = Number(req.query.limit) || 3;
+    const q     = (req.query.q || "").trim();
+
     const skip = (page - 1) * limit;
 
-    const total = await Contact.countDocuments();
-    const contacts = await Contact.find().skip(skip).limit(limit);
+    let filter = {};
+
+    if (q) {
+      const regex = new RegExp(q, "i");
+      filter = {
+        $or: [
+          { firstName: regex },
+          { lastName: regex },
+          { mobile1: regex },
+          { mobile2: regex },
+          { "address.city": regex },
+          { "address.state": regex },
+          { "address.pincode": regex }
+        ]
+      };
+    }
+
+    const total = await Contact.countDocuments(filter);
+    const contacts = await Contact.find(filter)
+      .skip(skip)
+      .limit(limit);
 
     res.json({
       success: true,
@@ -33,79 +55,65 @@ app.get("/api/contacts/paginate", async (req, res) => {
       totalPages: Math.ceil(total / limit),
       contacts
     });
+
   } catch (err) {
-    console.error("Pagination error:", err);
+    console.error("❌ PAGINATION ERROR:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-
-// ---------- SEARCH ----------
-app.get("/api/contacts/search", async (req, res) => {
-  const q = req.query.q || "";
-  const regex = new RegExp(q, "i");
-
-  const results = await Contact.find({
-    $or: [
-      { firstName: regex },
-      { lastName: regex },
-      { mobile1: regex },
-      { "address.city": regex }
-    ]
-  });
-
-  res.json(results);
-});
-
-
-// ---------- GET ALL ----------
-app.get("/api/contacts", async (req, res) => {
-  const contacts = await Contact.find();
-  res.json(contacts);
-});
-
-
-// ---------- GET ONE (ALWAYS LAST) ----------
+/* ======================================================
+   GET ONE CONTACT (KEEP BELOW PAGINATE)
+   ====================================================== */
 app.get("/api/contacts/:id", async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid contact id"
-    });
-  }
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, error: "Invalid ID" });
+    }
 
-  const contact = await Contact.findById(req.params.id);
-  if (!contact) {
-    return res.status(404).json({ success: false });
-  }
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ success: false, error: "Not found" });
+    }
 
-  res.json(contact);
+    res.json(contact);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-
-// ---------- CREATE ----------
+/* ======================================================
+   CREATE
+   ====================================================== */
 app.post("/api/contacts", async (req, res) => {
   const contact = new Contact(req.body);
   await contact.save();
   res.json({ success: true, contact });
 });
 
-
-// ---------- UPDATE ----------
+/* ======================================================
+   UPDATE
+   ====================================================== */
 app.put("/api/contacts/:id", async (req, res) => {
-  const updated = await Contact.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const updated = await Contact.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
   res.json({ success: true, contact: updated });
 });
 
-
-// ---------- DELETE ----------
+/* ======================================================
+   DELETE
+   ====================================================== */
 app.delete("/api/contacts/:id", async (req, res) => {
   await Contact.findByIdAndDelete(req.params.id);
   res.json({ success: true });
 });
 
-
-// ---------- START ----------
+/* ======================================================
+   START SERVER
+   ====================================================== */
 app.listen(5000, () => {
   console.log("🚀 Server running on http://localhost:5000");
 });
