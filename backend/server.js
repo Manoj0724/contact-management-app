@@ -63,7 +63,7 @@ app.get("/api/contacts/paginate", async (req, res) => {
 });
 
 /* ======================================================
-   GET ONE CONTACT (KEEP BELOW PAGINATE)
+   GET ONE CONTACT (KEEP BELOW PAGINATE)   
    ====================================================== */
 app.get("/api/contacts/:id", async (req, res) => {
   try {

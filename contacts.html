@@ -295,8 +295,7 @@
             <select
               id="pageSizeSelect"
               class="form-select form-select-sm border-secondary text-secondary fw-bold"
-              style="width: 70px; padding: 2px 6px"
-            >
+              style="width: 70px; padding: 2px 6px">
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="15">15</option>
@@ -463,7 +462,26 @@
       </div>
     </div>
     <!-- /.container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  // ---------- MODAL & FORM ELEMENTS ----------
+const addContactModal = document.getElementById("addContactModal");
+const saveContactBtn = document.getElementById("saveContactBtn");
+
+const newTitle = document.getElementById("newTitle");
+const newFirst = document.getElementById("newFirst");
+const newLast = document.getElementById("newLast");
+const newMob1 = document.getElementById("newMob1");
+const newMob2 = document.getElementById("newMob2");
+const newCity = document.getElementById("newCity");
+const newState = document.getElementById("newState");
+const newPin = document.getElementById("newPin");
+
+// ---------- EDIT STATE ----------
+let isEditing = false;
+let editingId = null;
+
 const contactBody = document.getElementById("contactBody");
 const pagination = document.getElementById("pagination");
 const pageSizeSelect = document.getElementById("pageSizeSelect");
@@ -600,23 +618,174 @@ pageSizeSelect.onchange = () => {
 function deleteContact(id) {
   if (!confirm("Delete this contact?")) return;
 
-  fetch(`http://localhost:5000/api/contacts/${id}`, { method: "DELETE" })
+  fetch(`http://localhost:5000/api/contacts/${id}`, {
+    method: "DELETE"
+  })
     .then(res => res.json())
-    .then(() => loadContacts())
-    .catch(() => alert("Delete failed"));
+    .then(() => {
+      showToast("Contact deleted");
+      loadContacts(); // reload page from backend
+    });
 }
 
 /* ================================
    EDIT (redirect or modal logic later)
 ================================ */
 function editContact(id) {
-  alert("Edit contact ID: " + id);
+  fetch(`http://localhost:5000/api/contacts/${id}`)
+    .then(res => res.json())
+    .then(contact => {
+      isEditing = true;
+      editingId = id;
+
+      newTitle.value = contact.title;
+      newFirst.value = contact.firstName;
+      newLast.value = contact.lastName;
+      newMob1.value = contact.mobile1;
+      newMob2.value = contact.mobile2 || "";
+      newCity.value = contact.address.city;
+      newState.value = contact.address.state;
+      newPin.value = contact.address.pincode;
+
+      saveContactBtn.innerText = "Update Contact";
+      document.querySelector(".modal-title").innerText = "Edit Contact";
+
+      new bootstrap.Modal(addContactModal).show();
+    });
 }
+function showToast(message) {
+  document.getElementById("toastMessage").innerText = message;
+  const toastEl = document.getElementById("successToast");
+  const toast = new bootstrap.Toast(toastEl);
+  toast.show();
+}
+
+function resetModal() {
+  isEditing = false;
+  editingId = null;
+
+  saveContactBtn.innerText = "Save Contact";
+  document.querySelector(".modal-title").innerText = "Add New Contact";
+
+  newTitle.value = "Mr";
+  newFirst.value = "";
+  newLast.value = "";
+  newMob1.value = "";
+  newMob2.value = "";
+  newCity.value = "";
+  newState.value = "";
+  newPin.value = "";
+
+  const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
+  modal.hide();
+}
+
+saveContactBtn.onclick = () => {
+
+  // ✅ validation INSIDE function
+  if (
+    !newFirst.value ||
+    !newLast.value ||
+    !newMob1.value ||
+    !newCity.value ||
+    !newState.value ||
+    !newPin.value
+  ) {
+    alert("Please fill all mandatory fields");
+    return;
+  }
+
+  const payload = {
+    title: newTitle.value,
+    firstName: newFirst.value,
+    lastName: newLast.value,
+    mobile1: newMob1.value,
+    mobile2: newMob2.value,
+    address: {
+      city: newCity.value,
+      state: newState.value,
+      pincode: newPin.value
+    }
+  };
+
+  const url = isEditing
+    ? `http://localhost:5000/api/contacts/${editingId}`
+    : `http://localhost:5000/api/contacts`;
+
+  const method = isEditing ? "PUT" : "POST";
+
+  fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(() => {
+      showToast(isEditing ? "Contact updated" : "Contact added");
+      resetModal();
+      loadContacts();
+    })
+    .catch(() => alert("Save failed"));
+};
+
+function resetModal() {
+  // exit edit mode
+  isEditing = false;
+  editingId = null;
+
+  // reset modal title & button
+  saveContactBtn.innerText = "Save Contact";
+  document.querySelector(".modal-title").innerText = "Add New Contact";
+
+  // clear all inputs
+  newTitle.value = "Mr";
+  newFirst.value = "";
+  newLast.value = "";
+  newMob1.value = "";
+  newMob2.value = "";
+  newCity.value = "";
+  newState.value = "";
+  newPin.value = "";
+
+  // close modal
+  const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
+modal.hide();
+
+}
+
+  const url = isEditing
+    ? `http://localhost:5000/api/contacts/${editingId}`
+    : `http://localhost:5000/api/contacts`;
+
+  const method = isEditing ? "PUT" : "POST";
+
+  fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(() => {
+      showToast(isEditing ? "Contact updated" : "Contact added");
+      resetModal();
+      function showToast(message) {
+  document.getElementById("toastMessage").innerText = message;
+
+  const toastEl = document.getElementById("successToast");
+  const toast = new bootstrap.Toast(toastEl);
+
+  toast.show();
+}
+      loadContacts();
+    });
+
+
 
 /* ================================
    INITIAL LOAD
 ================================ */
 loadContacts();
+
 </script>
 
 <!-- Toast Notification -->
