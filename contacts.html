@@ -496,20 +496,6 @@ const state = {
   query: ""
 };
 
-// restore saved page size (persist last selection across reloads)
-try {
-  const saved = localStorage.getItem("contact_page_size");
-  if (saved && Number(saved) > 0) {
-    state.limit = Number(saved);
-    if (pageSizeSelect) pageSizeSelect.value = String(state.limit);
-  } else if (pageSizeSelect) {
-    // ensure select reflects initial state.limit
-    pageSizeSelect.value = String(state.limit);
-  }
-} catch (e) {
-  console.warn("localStorage unavailable:", e);
-}
-
 function loadContacts() {
   let url = `${API}?page=${state.page}&limit=${state.limit}`;
   if (state.query) {
@@ -622,14 +608,110 @@ searchInput.addEventListener("keydown", e => {
 ================================ */
 pageSizeSelect.onchange = () => {
   state.limit = Number(pageSizeSelect.value);
-  try {
-    localStorage.setItem("contact_page_size", String(state.limit));
-  } catch (e) {
-    console.warn("localStorage set failed:", e);
-  }
   state.page = 1;
   loadContacts();
 };
+/* ================================
+   ADVANCED SEARCH (FIXED)
+================================ */
+
+const applyFilterBtn = document.getElementById("applyFilter");
+const resetFilterBtn = document.getElementById("resetFilter");
+
+applyFilterBtn.onclick = () => {
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName  = document.getElementById("lastName").value.trim();
+  const mobile    = document.getElementById("mobile").value.trim();
+  const city      = document.getElementById("city").value;
+  const stateVal  = document.getElementById("state").value;
+  const pincode   = document.getElementById("pincode").value.trim();
+
+  // priority-based search (ONE value only)
+  if (firstName) state.query = firstName;
+  else if (lastName) state.query = lastName;
+  else if (mobile) state.query = mobile;
+  else if (city && city !== "All") state.query = city;
+  else if (stateVal && stateVal !== "All") state.query = stateVal;
+  else if (pincode) state.query = pincode;
+  else {
+    alert("Please enter at least one search field");
+    return;
+  }
+
+  state.page = 1;
+  loadContacts();
+};
+
+resetFilterBtn.onclick = () => {
+  document.getElementById("title").value = "";
+  document.getElementById("firstName").value = "";
+  document.getElementById("lastName").value = "";
+  document.getElementById("mobile").value = "";
+  document.getElementById("city").value = "";
+  document.getElementById("state").value = "";
+  document.getElementById("pincode").value = "";
+
+  state.query = "";
+  state.page = 1;
+  loadContacts();
+};
+/* ================================
+   CSV EXPORT (WORKING)
+================================ */
+
+const csvBtn = document.getElementById("csvButton");
+
+csvBtn.onclick = () => {
+  const rows = document.querySelectorAll("#contactTable tbody tr");
+
+  if (!rows.length || rows[0].innerText.includes("No records")) {
+    alert("No data to export");
+    return;
+  }
+
+  let csv = [];
+  csv.push([
+    "Title",
+    "First Name",
+    "Last Name",
+    "Mobile 1",
+    "Mobile 2",
+    "City",
+    "State",
+    "Pincode"
+  ].join(","));
+
+  rows.forEach(row => {
+    const cols = row.querySelectorAll("td");
+    const rowData = [
+      cols[0]?.innerText,
+      cols[1]?.innerText,
+      cols[2]?.innerText,
+      cols[3]?.innerText,
+      cols[4]?.innerText,
+      cols[5]?.innerText,
+      cols[6]?.innerText,
+      cols[7]?.innerText
+    ];
+    csv.push(rowData.join(","));
+  });
+
+  downloadCSV(csv.join("\n"));
+};
+
+function downloadCSV(csvContent) {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "contacts.csv";
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 /* ================================
    DELETE
@@ -680,12 +762,13 @@ function showToast(message) {
 }
 
 function resetModal() {
+    // exit edit mode
   isEditing = false;
   editingId = null;
-
+  // reset modal title & button
   saveContactBtn.innerText = "Save Contact";
   document.querySelector(".modal-title").innerText = "Add New Contact";
-
+  // clear all inputs
   newTitle.value = "Mr";
   newFirst.value = "";
   newLast.value = "";
@@ -694,12 +777,15 @@ function resetModal() {
   newCity.value = "";
   newState.value = "";
   newPin.value = "";
+  // close modal
 
   const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
   modal.hide();
 }
 
 saveContactBtn.onclick = () => {
+
+  // ✅ validation INSIDE function
   if (
     !newFirst.value ||
     !newLast.value ||
@@ -724,6 +810,7 @@ saveContactBtn.onclick = () => {
       pincode: newPin.value
     }
   };
+};
 
   const url = isEditing
     ? `http://localhost:5000/api/contacts/${editingId}`
@@ -741,72 +828,7 @@ saveContactBtn.onclick = () => {
       showToast(isEditing ? "Contact updated" : "Contact added");
       resetModal();
       loadContacts();
-    })
-    .catch(() => alert("Save failed"));
-};
-
-function resetModal() {
-  isEditing = false;
-  editingId = null;
-
-  saveContactBtn.innerText = "Save Contact";
-  document.querySelector(".modal-title").innerText = "Add New Contact";
-
-  newTitle.value = "Mr";
-  newFirst.value = "";
-  newLast.value = "";
-  newMob1.value = "";
-  newMob2.value = "";
-  newCity.value = "";
-  newState.value = "";
-  newPin.value = "";
-
-  const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
-  modal.hide();
-}
-
-// Advanced search elements
-const advTitle = document.getElementById("title");
-const advFirst = document.getElementById("firstName");
-const advLast = document.getElementById("lastName");
-const advMobile = document.getElementById("mobile");
-const advCity = document.getElementById("city");
-const advState = document.getElementById("state");
-const advPincode = document.getElementById("pincode");
-
-const applyFilterBtn = document.getElementById("applyFilter");
-const resetFilterBtn = document.getElementById("resetFilter");
-
-applyFilterBtn.onclick = () => {
-  const parts = [];
-  if (advTitle && advTitle.value) parts.push(advTitle.value);
-  if (advFirst && advFirst.value) parts.push(advFirst.value);
-  if (advLast && advLast.value) parts.push(advLast.value);
-  if (advMobile && advMobile.value) parts.push(advMobile.value);
-  if (advCity && advCity.value) parts.push(advCity.value);
-  if (advState && advState.value) parts.push(advState.value);
-  if (advPincode && advPincode.value) parts.push(advPincode.value);
-
-  state.query = parts.join(" ").trim();
-  state.page = 1;
-  loadContacts();
-};
-
-resetFilterBtn.onclick = () => {
-  if (advTitle) advTitle.value = "";
-  if (advFirst) advFirst.value = "";
-  if (advLast) advLast.value = "";
-  if (advMobile) advMobile.value = "";
-  if (advCity) advCity.value = "";
-  if (advState) advState.value = "";
-  if (advPincode) advPincode.value = "";
-
-  state.query = "";
-  state.page = 1;
-  loadContacts();
-};
-
-
+    });
 
 /* ================================
    INITIAL LOAD
