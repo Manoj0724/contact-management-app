@@ -78,9 +78,12 @@
               class="form-control"
               placeholder="Search by name, mobile, or city..."
             />
+
             <button class="btn btn-primary" id="basicSearchBtn">
               <i class="bi bi-search"></i>
             </button>
+
+           
           </div>
         </div>
         <!-- New Contact + Advanced + CSV in the SAME LINE -->
@@ -295,7 +298,8 @@
             <select
               id="pageSizeSelect"
               class="form-select form-select-sm border-secondary text-secondary fw-bold"
-              style="width: 70px; padding: 2px 6px">
+              style="width: 70px; padding: 2px 6px"
+            >
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="15">15</option>
@@ -463,91 +467,90 @@
     </div>
     <!-- /.container -->
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  // ---------- MODAL & FORM ELEMENTS ----------
-const addContactModal = document.getElementById("addContactModal");
-const saveContactBtn = document.getElementById("saveContactBtn");
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ---------- MODAL & FORM ELEMENTS ----------
+      const addContactModal = document.getElementById("addContactModal");
+      const saveContactBtn = document.getElementById("saveContactBtn");
 
-const newTitle = document.getElementById("newTitle");
-const newFirst = document.getElementById("newFirst");
-const newLast = document.getElementById("newLast");
-const newMob1 = document.getElementById("newMob1");
-const newMob2 = document.getElementById("newMob2");
-const newCity = document.getElementById("newCity");
-const newState = document.getElementById("newState");
-const newPin = document.getElementById("newPin");
+      const newTitle = document.getElementById("newTitle");
+      const newFirst = document.getElementById("newFirst");
+      const newLast = document.getElementById("newLast");
+      const newMob1 = document.getElementById("newMob1");
+      const newMob2 = document.getElementById("newMob2");
+      const newCity = document.getElementById("newCity");
+      const newState = document.getElementById("newState");
+      const newPin = document.getElementById("newPin");
 
-// ---------- EDIT STATE ----------
-let isEditing = false;
-let editingId = null;
+      // ---------- EDIT STATE ----------
+      let isEditing = false;
+      let editingId = null;
 
-const contactBody = document.getElementById("contactBody");
-const pagination = document.getElementById("pagination");
-const pageSizeSelect = document.getElementById("pageSizeSelect");
-const searchInput = document.getElementById("basicSearch");
-const searchBtn = document.getElementById("basicSearchBtn");
+      const contactBody = document.getElementById("contactBody");
+      const pagination = document.getElementById("pagination");
+      const pageSizeSelect = document.getElementById("pageSizeSelect");
+      const searchInput = document.getElementById("basicSearch");
+      const searchBtn = document.getElementById("basicSearchBtn");
 
-const API = "http://localhost:5000/api/contacts/paginate";
+      const API = "http://localhost:5000/api/contacts/paginate";
 
-const savedPageSize = Number(localStorage.getItem("pageSize")) || 3;
+      const savedPageSize = Number(localStorage.getItem("pageSize")) || 3;
 
-const state = {
-  page: 1,
-  limit: savedPageSize,
-  query: ""
-};
-pageSizeSelect.value = state.limit;
+      const state = {
+        page: 1,
+        limit: savedPageSize,
+        query: "",
+      };
+      pageSizeSelect.value = state.limit;
 
+      function loadContacts() {
+        let url = `${API}?page=${state.page}&limit=${state.limit}`;
+        if (state.query) {
+          url += `&q=${encodeURIComponent(state.query)}`;
+        }
 
-function loadContacts() {
-  let url = `${API}?page=${state.page}&limit=${state.limit}`;
-  if (state.query) {
-    url += `&q=${encodeURIComponent(state.query)}`;
-  }
+        console.log("API CALL →", url);
 
-  console.log("API CALL →", url);
+        fetch(url)
+          .then((res) => {
+            if (!res.ok) throw new Error(res.status);
+            return res.json();
+          })
+          .then((data) => {
+            if (!data.success) {
+              alert("Backend returned error");
+              return;
+            }
 
-  fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error(res.status);
-      return res.json();
-    })
-    .then(data => {
-  if (!data.success) {
-    alert("Backend returned error");
-    return;
-  }
+            renderTable(data.contacts);
+            renderPagination(data.totalPages);
 
-  renderTable(data.contacts);
-  renderPagination(data.totalPages);
+            document.getElementById(
+              "accountCount"
+            ).innerText = `Showing page ${data.page} of ${data.totalPages} (Total: ${data.total})`;
+          })
 
-  document.getElementById("accountCount").innerText =
-    `Showing page ${data.page} of ${data.totalPages} (Total: ${data.total})`;
-})
+          .catch((err) => {
+            console.error("Fetch error:", err);
+            alert("Backend fetch failed");
+          });
+      }
 
-    .catch(err => {
-      console.error("Fetch error:", err);
-      alert("Backend fetch failed");
-    });
-}
+      loadContacts();
 
-loadContacts();
-
-/* ================================
+      /* ================================
    RENDER TABLE
 ================================ */
-function renderTable(list) {
-  contactBody.innerHTML = "";
+      function renderTable(list) {
+        contactBody.innerHTML = "";
 
-  if (!list.length) {
-    contactBody.innerHTML =
-      `<tr><td colspan="9" class="text-center text-danger">No records found</td></tr>`;
-    return;
-  }
+        if (!list.length) {
+          contactBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">No records found</td></tr>`;
+          return;
+        }
 
-  list.forEach(c => {
-    contactBody.innerHTML += `
+        list.forEach((c) => {
+          contactBody.innerHTML += `
       <tr>
         <td>${c.title}</td>
         <td>${c.firstName}</td>
@@ -558,307 +561,357 @@ function renderTable(list) {
         <td>${c.address?.state || ""}</td>
         <td>${c.address?.pincode || ""}</td>
         <td>
-          <button class="btn btn-sm btn-warning me-1" onclick="editContact('${c._id}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteContact('${c._id}')">Delete</button>
+          <button class="btn btn-sm btn-warning me-1" onclick="editContact('${
+            c._id
+          }')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteContact('${
+            c._id
+          }')">Delete</button>
         </td>
       </tr>`;
-  });
-}
+        });
+      }
 
-/* ================================
+      /* ================================
    PAGINATION
 ================================ */
-function renderPagination(totalPages) {
-  pagination.innerHTML = "";
+      function renderPagination(totalPages) {
+        pagination.innerHTML = "";
 
-  pagination.innerHTML += `
+        pagination.innerHTML += `
     <li class="page-item ${state.page === 1 ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="gotoPage(${state.page - 1})">Prev</a>
+      <a class="page-link" href="#" onclick="gotoPage(${
+        state.page - 1
+      })">Prev</a>
     </li>`;
 
-  for (let i = 1; i <= totalPages; i++) {
-    pagination.innerHTML += `
+        for (let i = 1; i <= totalPages; i++) {
+          pagination.innerHTML += `
       <li class="page-item ${state.page === i ? "active" : ""}">
         <a class="page-link" href="#" onclick="gotoPage(${i})">${i}</a>
       </li>`;
-  }
+        }
 
-  pagination.innerHTML += `
+        pagination.innerHTML += `
     <li class="page-item ${state.page === totalPages ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="gotoPage(${state.page + 1})">Next</a>
+      <a class="page-link" href="#" onclick="gotoPage(${
+        state.page + 1
+      })">Next</a>
     </li>`;
-}
+      }
 
-function gotoPage(p) {
-  state.page = p;
-  loadContacts();
-}
+      function gotoPage(p) {
+        state.page = p;
+        loadContacts();
+      }
 
-/* ================================
+      /* ================================
    SEARCH
 ================================ */
+      let isSearchApplied = false;
+
 searchBtn.onclick = () => {
-  state.query = searchInput.value.trim();
+  // 🔁 CLEAR MODE
+  if (isSearchApplied) {
+    searchInput.value = "";
+    state.query = "";
+    state.page = 1;
+    loadContacts();
+
+    // reset button to SEARCH
+    searchBtn.classList.remove("btn-danger");
+    searchBtn.classList.add("btn-primary");
+    searchBtn.innerHTML = `<i class="bi bi-search"></i>`;
+
+    isSearchApplied = false;
+    return;
+  }
+
+  // 🔍 SEARCH MODE
+  const value = searchInput.value.trim();
+  if (!value) return;
+
+  state.query = value;
   state.page = 1;
   loadContacts();
+
+  // change button to CLEAR
+  searchBtn.classList.remove("btn-primary");
+  searchBtn.classList.add("btn-danger");
+  searchBtn.innerHTML = `<i class="bi bi-x-lg"></i>`;
+
+  isSearchApplied = true;
 };
 
-searchInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") searchBtn.click();
-});
 
-/* ================================
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") searchBtn.click();
+      });
+      
+      /* ================================
    PAGE SIZE
 ================================ */
-pageSizeSelect.onchange = () => {
-  const selectedSize = Number(pageSizeSelect.value);
+      pageSizeSelect.onchange = () => {
+        const selectedSize = Number(pageSizeSelect.value);
 
-  // save to localStorage
-  localStorage.setItem("pageSize", selectedSize);
+        // save to localStorage
+        localStorage.setItem("pageSize", selectedSize);
 
-  state.limit = selectedSize;
-  state.page = 1;
-  loadContacts();
-};
+        state.limit = selectedSize;
+        state.page = 1;
+        loadContacts();
+      };
 
-/* ================================
+      /* ================================
    ADVANCED SEARCH (FIXED)
 ================================ */
 
-const applyFilterBtn = document.getElementById("applyFilter");
-const resetFilterBtn = document.getElementById("resetFilter");
+      const applyFilterBtn = document.getElementById("applyFilter");
+      const resetFilterBtn = document.getElementById("resetFilter");
 
-applyFilterBtn.onclick = () => {
-  const firstName = document.getElementById("firstName").value.trim();
-  const lastName  = document.getElementById("lastName").value.trim();
-  const mobile    = document.getElementById("mobile").value.trim();
-  const city      = document.getElementById("city").value;
-  const stateVal  = document.getElementById("state").value;
-  const pincode   = document.getElementById("pincode").value.trim();
+      applyFilterBtn.onclick = () => {
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const mobile = document.getElementById("mobile").value.trim();
+        const city = document.getElementById("city").value;
+        const stateVal = document.getElementById("state").value;
+        const pincode = document.getElementById("pincode").value.trim();
 
-  // priority-based search (ONE value only)
-  if (firstName) state.query = firstName;
-  else if (lastName) state.query = lastName;
-  else if (mobile) state.query = mobile;
-  else if (city && city !== "All") state.query = city;
-  else if (stateVal && stateVal !== "All") state.query = stateVal;
-  else if (pincode) state.query = pincode;
-  else {
-    alert("Please enter at least one search field");
-    return;
-  }
+        // priority-based search (ONE value only)
+        if (firstName) state.query = firstName;
+        else if (lastName) state.query = lastName;
+        else if (mobile) state.query = mobile;
+        else if (city && city !== "All") state.query = city;
+        else if (stateVal && stateVal !== "All") state.query = stateVal;
+        else if (pincode) state.query = pincode;
+        else {
+          alert("Please enter at least one search field");
+          return;
+        }
 
-  state.page = 1;
-  loadContacts();
-};
+        state.page = 1;
+        loadContacts();
+      };
 
-resetFilterBtn.onclick = () => {
-  document.getElementById("title").value = "";
-  document.getElementById("firstName").value = "";
-  document.getElementById("lastName").value = "";
-  document.getElementById("mobile").value = "";
-  document.getElementById("city").value = "";
-  document.getElementById("state").value = "";
-  document.getElementById("pincode").value = "";
+      resetFilterBtn.onclick = () => {
+        document.getElementById("title").value = "";
+        document.getElementById("firstName").value = "";
+        document.getElementById("lastName").value = "";
+        document.getElementById("mobile").value = "";
+        document.getElementById("city").value = "";
+        document.getElementById("state").value = "";
+        document.getElementById("pincode").value = "";
 
-  state.query = "";
-  state.page = 1;
-  loadContacts();
-};
-/* ================================
+        state.query = "";
+        state.page = 1;
+        loadContacts();
+      };
+      /* ================================
    CSV EXPORT (WORKING)
 ================================ */
 
-const csvBtn = document.getElementById("csvButton");
+      const csvBtn = document.getElementById("csvButton");
 
-csvBtn.onclick = () => {
-  const rows = document.querySelectorAll("#contactTable tbody tr");
+      csvBtn.onclick = () => {
+        const rows = document.querySelectorAll("#contactTable tbody tr");
 
-  if (!rows.length || rows[0].innerText.includes("No records")) {
-    alert("No data to export");
-    return;
-  }
+        if (!rows.length || rows[0].innerText.includes("No records")) {
+          alert("No data to export");
+          return;
+        }
 
-  let csv = [];
-  csv.push([
-    "Title",
-    "First Name",
-    "Last Name",
-    "Mobile 1",
-    "Mobile 2",
-    "City",
-    "State",
-    "Pincode"
-  ].join(","));
+        let csv = [];
+        csv.push(
+          [
+            "Title",
+            "First Name",
+            "Last Name",
+            "Mobile 1",
+            "Mobile 2",
+            "City",
+            "State",
+            "Pincode",
+          ].join(",")
+        );
 
-  rows.forEach(row => {
-    const cols = row.querySelectorAll("td");
-    const rowData = [
-      cols[0]?.innerText,
-      cols[1]?.innerText,
-      cols[2]?.innerText,
-      cols[3]?.innerText,
-      cols[4]?.innerText,
-      cols[5]?.innerText,
-      cols[6]?.innerText,
-      cols[7]?.innerText
-    ];
-    csv.push(rowData.join(","));
-  });
+        rows.forEach((row) => {
+          const cols = row.querySelectorAll("td");
+          const rowData = [
+            cols[0]?.innerText,
+            cols[1]?.innerText,
+            cols[2]?.innerText,
+            cols[3]?.innerText,
+            cols[4]?.innerText,
+            cols[5]?.innerText,
+            cols[6]?.innerText,
+            cols[7]?.innerText,
+          ];
+          csv.push(rowData.join(","));
+        });
 
-  downloadCSV(csv.join("\n"));
-};
+        downloadCSV(csv.join("\n"));
+      };
 
-function downloadCSV(csvContent) {
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
+      function downloadCSV(csvContent) {
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "contacts.csv";
-  document.body.appendChild(a);
-  a.click();
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "contacts.csv";
+        document.body.appendChild(a);
+        a.click();
 
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
-/* ================================
+      /* ================================
    DELETE
 ================================ */
-function deleteContact(id) {
-  if (!confirm("Delete this contact?")) return;
+      function deleteContact(id) {
+        if (!confirm("Delete this contact?")) return;
 
-  fetch(`http://localhost:5000/api/contacts/${id}`, {
-    method: "DELETE"
-  })
-    .then(res => res.json())
-    .then(() => {
-      showToast("✔ Contact deleted Successfully!");
-      loadContacts(); // reload page from backend
-    });
-}
+        fetch(`http://localhost:5000/api/contacts/${id}`, {
+          method: "DELETE",
+        })
+          .then((res) => res.json())
+          .then(() => {
+            showToast("✔ Contact deleted Successfully!");
+            loadContacts(); // reload page from backend
+          });
+      }
 
-/* ================================
+      /* ================================
    EDIT (redirect or modal logic later)
 ================================ */
-function editContact(id) {
-  fetch(`http://localhost:5000/api/contacts/${id}`)
-    .then(res => res.json())
-    .then(contact => {
-      isEditing = true;
-      editingId = id;
+      function editContact(id) {
+        fetch(`http://localhost:5000/api/contacts/${id}`)
+          .then((res) => res.json())
+          .then((contact) => {
+            isEditing = true;
+            editingId = id;
 
-      newTitle.value = contact.title;
-      newFirst.value = contact.firstName;
-      newLast.value = contact.lastName;
-      newMob1.value = contact.mobile1;
-      newMob2.value = contact.mobile2 || "";
-      newCity.value = contact.address.city;
-      newState.value = contact.address.state;
-      newPin.value = contact.address.pincode;
+            newTitle.value = contact.title;
+            newFirst.value = contact.firstName;
+            newLast.value = contact.lastName;
+            newMob1.value = contact.mobile1;
+            newMob2.value = contact.mobile2 || "";
+            newCity.value = contact.address.city;
+            newState.value = contact.address.state;
+            newPin.value = contact.address.pincode;
 
-      saveContactBtn.innerText = "Update Contact";
-      document.querySelector(".modal-title").innerText = "Edit Contact";
+            saveContactBtn.innerText = "Update Contact";
+            document.querySelector(".modal-title").innerText = "Edit Contact";
 
-      new bootstrap.Modal(addContactModal).show();
-    });
-}
-function showToast(message) {
-  document.getElementById("toastMessage").innerText = message;
-  const toastEl = document.getElementById("successToast");
-  const toast = new bootstrap.Toast(toastEl);
-  toast.show();
-}
+            new bootstrap.Modal(addContactModal).show();
+          });
+      }
+      function showToast(message) {
+        document.getElementById("toastMessage").innerText = message;
+        const toastEl = document.getElementById("successToast");
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
 
-function resetModal() {
-    // exit edit mode
-  isEditing = false;
-  editingId = null;
-  // reset modal title & button
-  saveContactBtn.innerText = "Save Contact";
-  document.querySelector(".modal-title").innerText = "Add New Contact";
-  // clear all inputs
-  newTitle.value = "Mr";
-  newFirst.value = "";
-  newLast.value = "";
-  newMob1.value = "";
-  newMob2.value = "";
-  newCity.value = "";
-  newState.value = "";
-  newPin.value = "";
-  // close modal
+      function resetModal() {
+        // exit edit mode
+        isEditing = false;
+        editingId = null;
+        // reset modal title & button
+        saveContactBtn.innerText = "Save Contact";
+        document.querySelector(".modal-title").innerText = "Add New Contact";
+        // clear all inputs
+        newTitle.value = "Mr";
+        newFirst.value = "";
+        newLast.value = "";
+        newMob1.value = "";
+        newMob2.value = "";
+        newCity.value = "";
+        newState.value = "";
+        newPin.value = "";
+        // close modal
 
-  const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
-  modal.hide();
-}
+        const modal = bootstrap.Modal.getOrCreateInstance(addContactModal);
+        modal.hide();
+      }
 
-saveContactBtn.onclick = () => {
+      saveContactBtn.onclick = () => {
+        if (
+          !newFirst.value ||
+          !newLast.value ||
+          !newMob1.value ||
+          !newCity.value ||
+          !newState.value ||
+          !newPin.value
+        ) {
+          alert("Please fill all mandatory fields");
+          return;
+        }
 
-  if (
-    !newFirst.value ||
-    !newLast.value ||
-    !newMob1.value ||
-    !newCity.value ||
-    !newState.value ||
-    !newPin.value
-  ) {
-    alert("Please fill all mandatory fields");
-    return;
-  }
+        const payload = {
+          title: newTitle.value,
+          firstName: newFirst.value,
+          lastName: newLast.value,
+          mobile1: newMob1.value,
+          mobile2: newMob2.value,
+          address: {
+            city: newCity.value,
+            state: newState.value,
+            pincode: newPin.value,
+          },
+        };
 
-  const payload = {
-    title: newTitle.value,
-    firstName: newFirst.value,
-    lastName: newLast.value,
-    mobile1: newMob1.value,
-    mobile2: newMob2.value,
-    address: {
-      city: newCity.value,
-      state: newState.value,
-      pincode: newPin.value
-    }
-  };
+        const url = isEditing
+          ? `http://localhost:5000/api/contacts/${editingId}`
+          : `http://localhost:5000/api/contacts`;
 
-  const url = isEditing
-    ? `http://localhost:5000/api/contacts/${editingId}`
-    : `http://localhost:5000/api/contacts`;
+        const method = isEditing ? "PUT" : "POST";
 
-  const method = isEditing ? "PUT" : "POST";
+        fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then(() => {
+            showToast(
+              isEditing
+                ? "✔ New Contact Updated Successfully!"
+                : "✔ Contact added Successfully!"
+            );
+            resetModal();
+            loadContacts();
+          })
+          .catch(() => alert("Save failed"));
+      };
 
-  fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(res => res.json())
-    .then(() => {
-      showToast(isEditing ? "✔ New Contact Updated Successfully!" : "✔ Contact added Successfully!");
-      resetModal();
-      loadContacts();
-    })
-    .catch(() => alert("Save failed"));
-};
-
-
-/* ================================
+      /* ================================
    INITIAL LOAD
 ================================ */
-loadContacts();
+      loadContacts();
+    </script>
 
-</script>
-
-<!-- Toast Notification -->
-<div class="position-fixed top-0 end-0 p-3 ">
-  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert">
-    <div class="d-flex">
-      <div class="toast-body" id="toastMessage">
-        ✔ New Contact Updated Successfully!
+    <!-- Toast Notification -->
+    <div class="position-fixed top-0 end-0 p-3">
+      <div
+        id="successToast"
+        class="toast align-items-center text-white bg-success border-0"
+        role="alert"
+      >
+        <div class="d-flex">
+          <div class="toast-body" id="toastMessage">
+            ✔ New Contact Updated Successfully!
+          </div>
+          <button
+            type="button"
+            class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+          ></button>
+        </div>
       </div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
-  </div>
-</div>
-
-</body>
+  </body>
 </html>
