@@ -1,0 +1,207 @@
+<div class="container mt-5">
+  <div class="card shadow">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">➕ Add New Contact</h5>
+      <button class="btn btn-light btn-sm" (click)="cancel()">← Back</button>
+    </div>
+
+    <div class="card-body">
+      <form #contactForm="ngForm">
+        <div class="row">
+          <!-- TITLE -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">
+              Title <span class="text-danger">*</span>
+            </label>
+            <select
+              class="form-select"
+              name="title"
+              [(ngModel)]="form.title"
+              required
+              #title="ngModel"
+              [class.is-invalid]="title.invalid && title.touched">
+              <option value="">Select Title</option>
+              <option value="Mr">Mr</option>
+              <option value="Mrs">Mrs</option>
+              <option value="Ms">Ms</option>
+              <option value="Dr">Dr</option>
+            </select>
+            <div class="invalid-feedback" *ngIf="title.invalid && title.touched">
+              Title is required
+            </div>
+          </div>
+
+          <!-- FIRST NAME -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">
+              First Name <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="firstName"
+              [(ngModel)]="form.firstName"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #firstName="ngModel"
+              [class.is-invalid]="firstName.invalid && firstName.touched"
+              placeholder="Enter first name"
+            />
+            <div class="invalid-feedback" *ngIf="firstName.invalid && firstName.touched">
+              <div *ngIf="firstName.errors?.['required']">First name is required</div>
+              <div *ngIf="firstName.errors?.['pattern']">Only letters allowed</div>
+            </div>
+          </div>
+
+          <!-- LAST NAME -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">
+              Last Name <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="lastName"
+              [(ngModel)]="form.lastName"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #lastName="ngModel"
+              [class.is-invalid]="lastName.invalid && lastName.touched"
+              placeholder="Enter last name"
+            />
+            <div class="invalid-feedback" *ngIf="lastName.invalid && lastName.touched">
+              <div *ngIf="lastName.errors?.['required']">Last name is required</div>
+              <div *ngIf="lastName.errors?.['pattern']">Only letters allowed</div>
+            </div>
+          </div>
+
+          <!-- MOBILE 1 -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">
+              Mobile 1 <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="mobile1"
+              [(ngModel)]="form.mobile1"
+              required
+              pattern="^[0-9]{10}$"
+              maxlength="10"
+              #mobile1="ngModel"
+              [class.is-invalid]="mobile1.invalid && mobile1.touched"
+              placeholder="Enter 10-digit mobile number"
+            />
+            <div class="invalid-feedback" *ngIf="mobile1.invalid && mobile1.touched">
+              <div *ngIf="mobile1.errors?.['required']">Mobile 1 is required</div>
+              <div *ngIf="mobile1.errors?.['pattern']">Must be exactly 10 digits</div>
+            </div>
+          </div>
+
+          <!-- MOBILE 2 -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Mobile 2</label>
+            <input
+              type="text"
+              class="form-control"
+              name="mobile2"
+              [(ngModel)]="form.mobile2"
+              pattern="^[0-9]{10}$"
+              maxlength="10"
+              #mobile2="ngModel"
+              [class.is-invalid]="mobile2.invalid && mobile2.touched"
+              placeholder="Optional - 10 digits"
+            />
+            <div class="invalid-feedback" *ngIf="mobile2.invalid && mobile2.touched">
+              Must be exactly 10 digits
+            </div>
+          </div>
+
+          <!-- CITY -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">
+              City <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="city"
+              [(ngModel)]="form.city"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #city="ngModel"
+              [class.is-invalid]="city.invalid && city.touched"
+              placeholder="Enter city"
+            />
+            <div class="invalid-feedback" *ngIf="city.invalid && city.touched">
+              <div *ngIf="city.errors?.['required']">City is required</div>
+              <div *ngIf="city.errors?.['pattern']">Only letters allowed</div>
+            </div>
+          </div>
+
+          <!-- STATE -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">
+              State <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="state"
+              [(ngModel)]="form.state"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #state="ngModel"
+              [class.is-invalid]="state.invalid && state.touched"
+              placeholder="Enter state"
+            />
+            <div class="invalid-feedback" *ngIf="state.invalid && state.touched">
+              <div *ngIf="state.errors?.['required']">State is required</div>
+              <div *ngIf="state.errors?.['pattern']">Only letters allowed</div>
+            </div>
+          </div>
+
+          <!-- PINCODE -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">
+              Pincode <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="pincode"
+              [(ngModel)]="form.pincode"
+              required
+              pattern="^[0-9]{6}$"
+              maxlength="6"
+              #pincode="ngModel"
+              [class.is-invalid]="pincode.invalid && pincode.touched"
+              placeholder="Enter 6-digit pincode"
+            />
+            <div class="invalid-feedback" *ngIf="pincode.invalid && pincode.touched">
+              <div *ngIf="pincode.errors?.['required']">Pincode is required</div>
+              <div *ngIf="pincode.errors?.['pattern']">Must be exactly 6 digits</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ERROR SUMMARY -->
+        <div class="alert alert-danger" *ngIf="contactForm.invalid && contactForm.touched">
+          <strong>⚠️ Please fix the errors above before saving</strong>
+        </div>
+      </form>
+    </div>
+
+    <div class="card-footer text-end bg-light">
+      <button class="btn btn-secondary me-2" (click)="cancel()">
+        Cancel
+      </button>
+      <button
+        class="btn btn-success"
+        (click)="save()"
+        [disabled]="contactForm.invalid">
+        💾 Save Contact
+      </button>
+    </div>
+  </div>
+</div>

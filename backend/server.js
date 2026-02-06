@@ -5,6 +5,8 @@ const cors = require("cors");
 const Contact = require("./Contact");
 
 const app = express();
+app.disable('etag');
+
 
 app.use(cors());
 app.use(express.json());
@@ -72,6 +74,12 @@ const contacts = await Contact.find(filter)
    ====================================================== */
 app.get("/api/contacts/:id", async (req, res) => {
   try {
+    res.set({
+      'Cache-Control': 'no-store',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, error: "Invalid ID" });
     }

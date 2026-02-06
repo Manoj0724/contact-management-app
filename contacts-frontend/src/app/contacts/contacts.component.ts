@@ -1,12 +1,14 @@
-import { Component, OnInit, NgZone  } from '@angular/core';
+import { Component, OnInit, NgZone, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ContactsService } from '../services/contacts.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { signal } from '@angular/core';
+import { Contact } from '../contacts/models/contact.model';
+
 
 @Component({
   selector: 'app-contacts',
@@ -14,16 +16,18 @@ import { signal } from '@angular/core';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatButtonModule,
     MatInputModule,
     MatFormFieldModule,
     MatSnackBarModule,
 
   ],
-  templateUrl: './contacts.html'
+  templateUrl: './contacts.component.html'
 })
 export class ContactsComponent implements OnInit {
 private readonly MIN_SKELETON_TIME = 800; // ms
+pendingEditId: string | null = null;
   /* =====================
      TABLE + API STATE
   ====================== */
@@ -67,6 +71,7 @@ advancedErrors = {
   mobile: false,
   city: false
 };
+
 clearAdvancedSearchFields(): void {
   this.advancedSearch = {
     firstName: '',
@@ -85,10 +90,12 @@ clearAdvancedSearchFields(): void {
 
 openAdvancedSearch(): void {
   this.showAdvancedSearch = true;
+  this.router.navigate(['/search']);
 }
 
 closeAdvancedSearch(): void {
   this.showAdvancedSearch = false;
+  this.router.navigate(['/']);
 }
 
 // =====================
@@ -128,12 +135,11 @@ validateAdvancedSearch(): boolean {
 applyAdvancedSearch(): void {
   if (!this.validateAdvancedSearch()) return;
 
-  // 🔥 Priority-based search (same as classic contacts apps)
   if (this.advancedSearch.mobile) {
     this.searchText = this.advancedSearch.mobile;
   } else if (this.advancedSearch.firstName || this.advancedSearch.lastName) {
     this.searchText =
-      `${this.advancedSearch.firstName} ${this.advancedSearch.lastName}`.trim();
+  `${this.advancedSearch.firstName} ${this.advancedSearch.lastName}`.trim();
   } else if (this.advancedSearch.city) {
     this.searchText = this.advancedSearch.city;
   } else {
@@ -141,47 +147,48 @@ applyAdvancedSearch(): void {
   }
 
   this.isSearchActive = true;
-  this.page = 1;
+  this.page = 1;                 // ✅ IMPORTANT
   this.showAdvancedSearch = false;
 
-  this.fetchContacts();
-  this.clearAdvancedSearchFields(); // ✅ see Fix 2
+  this.fetchContacts();          // pagination now works
+  this.clearAdvancedSearchFields();
 }
 
   /* =====================
      MODAL (ADD / EDIT)
   ====================== */
-  showModal = false;
-  isEditMode = false;
-  selectedContactId: string | null = null;
 
-  form: any = {
-    firstName: '',
-    lastName: '',
-    mobile1: '',
-    city: ''
-  };
-
-  formTouched = false;
 
   constructor(
   private contactsService: ContactsService,
   private snackBar: MatSnackBar,
-  private zone: NgZone
-
+  private zone: NgZone,
+  private router: Router,
+  private route: ActivatedRoute
 ) {}
 
   /* =====================
      INIT
   ====================== */
-  ngOnInit(): void {
-    const savedLimit = localStorage.getItem('contacts_page_size');
-    if (savedLimit) {
-      this.limit = Number(savedLimit);
-    }
+ngOnInit(): void {
+  const savedLimit = localStorage.getItem('contacts_page_size');
+  if (savedLimit) {
+    this.limit = Number(savedLimit);
+  }
 
+  const currentPath = this.route.snapshot.routeConfig?.path;
+
+  // ✅ ONLY load contacts on list page
+  if (currentPath === 'contacts' || currentPath === '') {
     this.fetchContacts();
   }
+
+  // Advanced search page
+  if (currentPath === 'search') {
+    this.showAdvancedSearch = true;
+  }
+}
+
 
   /* =====================
      API
@@ -200,20 +207,22 @@ applyAdvancedSearch(): void {
 
         setTimeout(() => {
           this.contacts.set(res.contacts);
-          this.totalPages = res.totalPages;
-          this.loading.set(false);
+this.totalPages = res.totalPages;
+this.loading.set(false);
+
+// 🔥 OPEN EDIT AFTER DATA LOAD
+
         }, remaining);
       },
       error: () => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, this.MIN_SKELETON_TIME - elapsed);
+  this.error = 'Failed to load contacts';
 
-        setTimeout(() => {
-          this.error = 'Failed to load contacts';
-          this.contacts.set([]);
-          this.loading.set(false);
-        }, remaining);
-      }
+  // 🚫 DO NOT show toast if we are not on contacts page
+  if (this.router.url === '/contacts') {
+    this.showToast('Failed to load contacts', 'error');
+  }
+}
+
     });
 }
 
@@ -226,6 +235,7 @@ applyAdvancedSearch(): void {
     this.searchText = '';
     this.isSearchActive = false;
     this.page = 1;
+
     this.clearAdvancedSearchFields();
     this.fetchContacts();
     return;
@@ -237,8 +247,6 @@ applyAdvancedSearch(): void {
   this.page = 1;
   this.fetchContacts();
 }
-
-
 
   /* =====================
      CSV EXPORT
@@ -318,90 +326,7 @@ applyAdvancedSearch(): void {
     this.fetchContacts();
   }
 
-  /* =====================
-     ADD / EDIT MODAL
-  ====================== */
- openAdd(): void {
-  this.isEditMode = false;
-  this.form = { firstName: '', lastName: '', mobile1: '', city: '' };
-  this.showModal = true;
-}
-
-
- onEdit(contact: any): void {
-  this.isEditMode = true;
-  this.selectedContactId = contact._id;
-  this.form = {
-    firstName: contact.firstName,
-    lastName: contact.lastName,
-    mobile1: contact.mobile1,
-    city: contact.address?.city || ''
-  };
-  this.showModal = true;
-}
-
-
-  isFormValid(): boolean {
-    return (
-      this.form.firstName.trim() &&
-      this.form.lastName.trim() &&
-      this.form.mobile1.trim() &&
-      this.form.city.trim()
-    );
-  }
-
- onSave(): void {
-  this.formTouched = true;
-  if (!this.isFormValid()) return;
-
-  const payload = {
-    firstName: this.form.firstName,
-    lastName: this.form.lastName,
-    mobile1: this.form.mobile1,
-    address: { city: this.form.city }
-  };
-
-  const req = this.isEditMode
-    ? this.contactsService.updateContact(this.selectedContactId!, payload)
-    : this.contactsService.createContact(payload);
-
-  req.subscribe({
-    next: () => {
-      this.showModal = false;
-      this.formTouched = false;
-      this.fetchContacts();
-
-      this.showToast(
-        this.isEditMode
-          ? 'Contact updated successfully'
-          : 'Contact added successfully'
-      );
-    },
-    error: () => {
-      this.showToast('Failed to save contact', 'error');
-    }
-  });
-}
-
-
-  /* =====================
-     DELETE
-  ====================== */
-  onDelete(id: string): void {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
-
-    this.contactsService.deleteContact(id).subscribe({
-      next: () => {
-        this.fetchContacts();
-        this.showToast('Contact deleted successfully');
-      },
-      error: () => {
-        this.showToast('Failed to delete contact', 'error');
-      }
-    });
-  }
-
-  /* =====================
+ /* =====================
      TOAST
   ====================== */
  showToast(message: string, type: 'success' | 'error' = 'success'): void {
@@ -415,7 +340,38 @@ applyAdvancedSearch(): void {
         : ['toast-error']
     });
   });
-}
 
+}
+/* =====================
+   DELETE CONTACT
+====================== */
+onDelete(contactId: string, contactName: string): void {
+  // Show confirmation dialog
+  const confirmed = confirm(
+    `⚠️ Are you sure you want to delete "${contactName}"?\n\nThis action cannot be undone.`
+  );
+
+  if (!confirmed) {
+    return; // User cancelled
+  }
+
+  // Show loading (optional)
+  this.loading.set(true);
+
+  // Call the delete API
+  this.contactsService.deleteContact(contactId).subscribe({
+    next: () => {
+      this.showToast('✅ Contact deleted successfully!', 'success');
+
+      // Refresh the contacts list
+      this.fetchContacts();
+    },
+    error: (error) => {
+      console.error('Delete error:', error);
+      this.showToast('❌ Failed to delete contact', 'error');
+      this.loading.set(false);
+    }
+  });
+}
 
 }

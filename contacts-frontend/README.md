@@ -1,59 +1,75 @@
-# ContactsFrontend
+# Contact Management Application
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.2.
+A full-stack contact management system built with Angular and Node.js.
 
-## Development server
+## Version 1.0.0 (February 2026)
 
-To start a local development server, run:
+### Features
+- ✅ View contacts list with pagination
+- ✅ Search contacts (basic and advanced)
+- ✅ Add new contacts with validation
+- ✅ Edit existing contacts
+- ✅ Delete contacts with confirmation
+- ✅ Export contacts to CSV
+- ✅ Form validation with red border indicators
+- ✅ Responsive UI design
 
+### Tech Stack
+
+**Frontend:**
+- Angular 17+
+- TypeScript
+- Bootstrap 5
+- Angular Material
+
+**Backend:**
+- Node.js
+- Express.js
+- MongoDB
+
+### Mandatory Fields Validation
+- Title (required)
+- First Name (letters only, required)
+- Last Name (letters only, required)
+- Mobile 1 (exactly 10 digits, required)
+- Mobile 2 (exactly 10 digits, optional)
+- City (letters only, required)
+- State (letters only, required)
+- Pincode (exactly 6 digits, required)
+
+## Installation
+
+### Frontend Setup
 ```bash
-ng serve
+cd contacts-frontend
+npm install
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+### Backend Setup
 ```bash
-ng generate component component-name
+cd backend
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Usage
+1. Backend runs on `http://localhost:5000`
+2. Frontend runs on `http://localhost:4200`
+3. Navigate to `http://localhost:4200/contacts`
 
-```bash
-ng generate --help
+## Project Structure
+```
+contact_js/
+├── backend/              # Express.js API
+├── contacts-frontend/    # Angular application
+├── legacy/              # Archived legacy code
+├── contacts.json        # Sample data
+└── README.md           # This file
 ```
 
-## Building
+## Author
+Your Name
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## License
+MIT

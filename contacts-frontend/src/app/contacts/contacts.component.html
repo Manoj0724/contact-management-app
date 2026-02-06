@@ -1,3 +1,4 @@
+<h1>Contacts</h1>
 <div class="container mt-4">
   <div class="row g-2 align-items-center mb-3">
     <!-- SEARCH INPUT -->
@@ -26,8 +27,9 @@
 
     <!-- NEW CONTACT -->
     <div class="col-md-auto">
-      <button class="btn btn-success" (click)="openAdd()">
-        <i class="bi bi-person-plus"></i> New Contact
+      <button class="btn btn-success" routerLink="/contacts/new">
+        <i class="bi bi-plus-circle me-1"></i>
+        New Contact
       </button>
     </div>
 
@@ -84,8 +86,18 @@
           <td>{{ c.mobile1 }}</td>
           <td>{{ c.address?.city }}</td>
           <td class="text-center text-nowrap">
-            <button class="btn btn-sm btn-primary me-1" (click)="onEdit(c)">Edit</button>
-            <button class="btn btn-sm btn-danger" (click)="onDelete(c._id)">Delete</button>
+            <!-- EDIT BUTTON -->
+            <button class="btn btn-sm btn-primary me-2" [routerLink]="['/contacts/edit', c._id]">
+              Edit
+            </button>
+
+            <!-- DELETE BUTTON -->
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="onDelete(c._id, c.firstName + ' ' + c.lastName)"
+            >
+               Delete
+            </button>
           </td>
         </tr>
 
@@ -132,67 +144,7 @@
     </ul>
   </div>
 </div>
-<!-- MODAL -->
-<div class="modal fade show d-block" *ngIf="showModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <!-- HEADER -->
-      <div class="modal-header">
-        <h5 class="modal-title">
-          {{ isEditMode ? 'Edit Contact' : 'Add Contact' }}
-        </h5>
-        <button class="btn-close" (click)="showModal = false"></button>
-      </div>
 
-      <!-- ADD / EDIT CONTACT MODAL -->
-      <div class="modal fade show d-block" *ngIf="showModal">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-                {{ isEditMode ? 'Edit Contact' : 'Add Contact' }}
-              </h5>
-              <button class="btn-close" (click)="showModal = false"></button>
-            </div>
-
-            <div class="modal-body">
-              <input
-                class="form-control mb-2"
-                placeholder="First Name"
-                [(ngModel)]="form.firstName"
-              />
-
-              <input
-                class="form-control mb-2"
-                placeholder="Last Name"
-                [(ngModel)]="form.lastName"
-              />
-
-              <input class="form-control mb-2" placeholder="Mobile" [(ngModel)]="form.mobile1" />
-
-              <input class="form-control" placeholder="City" [(ngModel)]="form.city" />
-            </div>
-
-            <div class="modal-footer">
-              <button class="btn btn-secondary" (click)="showModal = false">Cancel</button>
-
-              <button class="btn btn-success" (click)="onSave()" [disabled]="!isFormValid()">
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- FOOTER (THIS IS STEP 1.5 LOCATION) -->
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showModal = false">Cancel</button>
-
-        <!-- ✅ STEP 1.5 SAVE BUTTON -->
-        <button class="btn btn-success" (click)="onSave()" [disabled]="!isFormValid()">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
 <!-- ADVANCED SEARCH MODAL -->
 <div class="modal fade show d-block" *ngIf="showAdvancedSearch">
   <div class="modal-dialog modal-md">
