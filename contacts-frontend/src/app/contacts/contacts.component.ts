@@ -252,21 +252,27 @@ this.loading.set(false);
      CSV EXPORT
   ====================== */
  exportCSV(): void {
-  const data = this.contacts(); // ✅ read signal value
+  const data = this.contacts();
 
-  if (!data.length) return;
+  if (!data.length) {
+    alert('No contacts to export');
+    return;
+  }
 
-  const headers = ['First Name', 'Last Name', 'Mobile', 'City'];
+  const headers = ['Title', 'First Name', 'Last Name', 'Mobile 1', 'Mobile 2', 'City', 'State', 'Pincode'];
 
   const rows = data.map(c => [
-    c.firstName,
-    c.lastName,
-    c.mobile1,
-    c.address?.city || ''
+    c.title || '',
+    c.firstName || '',
+    c.lastName || '',
+    c.mobile1 || '',
+    c.mobile2 || '',
+    c.address?.city || '',
+    c.address?.state || '',
+    c.address?.pincode || ''
   ]);
 
-  const csv =
-    headers.join(',') + '\n' +
+  const csv = headers.join(',') + '\n' +
     rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -279,7 +285,6 @@ this.loading.set(false);
 
   URL.revokeObjectURL(url);
 }
-
 
   /* =====================
      PAGE SIZE + PAGINATION
