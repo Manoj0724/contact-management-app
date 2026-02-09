@@ -33,3 +33,13 @@ All notable changes to this project will be documented in this file.
 - Angular Material for snackbar notifications
 - MongoDB for data persistence
 - RESTful API architecture
+## [1.1.0] - 2026-02-XX
+
+### Added
+- Playwright end-to-end automation for Contacts module
+- Automated tests for add, search, edit, and delete contact flows
+- Playwright configuration for local development
+
+### Technical
+- Playwright test runner integration
+- Headless browser automation

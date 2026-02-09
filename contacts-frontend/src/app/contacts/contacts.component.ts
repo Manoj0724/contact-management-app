@@ -251,16 +251,18 @@ this.loading.set(false);
   /* =====================
      CSV EXPORT
   ====================== */
- exportCSV(): void {
+exportCSV(): void {
   const data = this.contacts();
 
-  if (!data.length) {
+  if (!data || data.length === 0) {
     alert('No contacts to export');
     return;
   }
 
+  // CSV headers
   const headers = ['Title', 'First Name', 'Last Name', 'Mobile 1', 'Mobile 2', 'City', 'State', 'Pincode'];
 
+  // CSV rows
   const rows = data.map(c => [
     c.title || '',
     c.firstName || '',
@@ -272,20 +274,21 @@ this.loading.set(false);
     c.address?.pincode || ''
   ]);
 
-  const csv = headers.join(',') + '\n' +
-    rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  // Create CSV content
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(field => `"${field}"`).join(','))
+  ].join('\n');
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'contacts.csv';
-  a.click();
-
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'contacts.csv';  // ← This must match test expectation
+  link.click();
   URL.revokeObjectURL(url);
 }
-
   /* =====================
      PAGE SIZE + PAGINATION
   ====================== */
