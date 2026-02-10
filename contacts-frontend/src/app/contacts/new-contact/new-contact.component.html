@@ -1,212 +1,214 @@
-<div class="container mt-5">
-  <div class="card shadow">
-    <div
-      class="card-header bg-success text-white d-flex justify-content-between align-items-center"
-    >
-      <h5 class="mb-0">➕ Add New Contact</h5>
-      <button class="btn btn-light btn-sm" (click)="cancel()">← Back</button>
-    </div>
-
-    <div class="card-body">
-  <form #contactForm="ngForm">
-    <div class="row">
-      <!-- TITLE -->
-      <div class="col-md-4 mb-3">
-        <label class="form-label fw-bold">
-          Title <span class="text-danger">*</span>
-        </label>
-        <select
-          class="form-select"
-          name="title"
-          [(ngModel)]="form.title"
-          required
-          #title="ngModel"
-          [class.is-invalid]="title.invalid && title.touched"
-          data-testid="title">
-          <option value="">Select Title</option>
-          <option value="Mr">Mr</option>
-          <option value="Mrs">Mrs</option>
-          <option value="Ms">Ms</option>
-          <option value="Dr">Dr</option>
-        </select>
-        <div class="invalid-feedback" *ngIf="title.invalid && title.touched">
-          Title is required
-        </div>
-      </div>
-
-      <!-- FIRST NAME -->
-      <div class="col-md-4 mb-3">
-        <label class="form-label fw-bold">
-          First Name <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="firstName"
-          [(ngModel)]="form.firstName"
-          required
-          pattern="^[a-zA-Z\s]+$"
-          #firstName="ngModel"
-          [class.is-invalid]="firstName.invalid && firstName.touched"
-          placeholder="Enter first name"
-          data-testid="first-name"
-        />
-        <div class="invalid-feedback" *ngIf="firstName.invalid && firstName.touched">
-          <div *ngIf="firstName.errors?.['required']">First name is required</div>
-          <div *ngIf="firstName.errors?.['pattern']">Only letters allowed</div>
-        </div>
-      </div>
-
-      <!-- LAST NAME -->
-      <div class="col-md-4 mb-3">
-        <label class="form-label fw-bold">
-          Last Name <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="lastName"
-          [(ngModel)]="form.lastName"
-          required
-          pattern="^[a-zA-Z\s]+$"
-          #lastName="ngModel"
-          [class.is-invalid]="lastName.invalid && lastName.touched"
-          placeholder="Enter last name"
-          data-testid="last-name"
-        />
-        <div class="invalid-feedback" *ngIf="lastName.invalid && lastName.touched">
-          <div *ngIf="lastName.errors?.['required']">Last name is required</div>
-          <div *ngIf="lastName.errors?.['pattern']">Only letters allowed</div>
-        </div>
-      </div>
-
-      <!-- MOBILE 1 -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">
-          Mobile 1 <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="mobile1"
-          [(ngModel)]="form.mobile1"
-          required
-          pattern="^[0-9]{10}$"
-          maxlength="10"
-          #mobile1="ngModel"
-          [class.is-invalid]="mobile1.invalid && mobile1.touched"
-          placeholder="Enter 10-digit mobile number"
-          data-testid="mobile1"
-        />
-        <div class="invalid-feedback" *ngIf="mobile1.invalid && mobile1.touched">
-          <div *ngIf="mobile1.errors?.['required']">Mobile 1 is required</div>
-          <div *ngIf="mobile1.errors?.['pattern']">Must be exactly 10 digits</div>
-        </div>
-      </div>
-
-      <!-- MOBILE 2 -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Mobile 2</label>
-        <input
-          type="text"
-          class="form-control"
-          name="mobile2"
-          [(ngModel)]="form.mobile2"
-          pattern="^[0-9]{10}$"
-          maxlength="10"
-          #mobile2="ngModel"
-          [class.is-invalid]="mobile2.invalid && mobile2.touched"
-          placeholder="Optional - 10 digits"
-        />
-        <div class="invalid-feedback" *ngIf="mobile2.invalid && mobile2.touched">
-          Must be exactly 10 digits
-        </div>
-      </div>
-
-      <!-- CITY -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">
-          City <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="city"
-          [(ngModel)]="form.city"
-          required
-          pattern="^[a-zA-Z\s]+$"
-          #city="ngModel"
-          [class.is-invalid]="city.invalid && city.touched"
-          placeholder="Enter city"
-          data-testid="city"
-        />
-        <div class="invalid-feedback" *ngIf="city.invalid && city.touched">
-          <div *ngIf="city.errors?.['required']">City is required</div>
-          <div *ngIf="city.errors?.['pattern']">Only letters allowed</div>
-        </div>
-      </div>
-
-      <!-- STATE -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">
-          State <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="state"
-          [(ngModel)]="form.state"
-          required
-          pattern="^[a-zA-Z\s]+$"
-          #state="ngModel"
-          [class.is-invalid]="state.invalid && state.touched"
-          placeholder="Enter state"
-        />
-        <div class="invalid-feedback" *ngIf="state.invalid && state.touched">
-          <div *ngIf="state.errors?.['required']">State is required</div>
-          <div *ngIf="state.errors?.['pattern']">Only letters allowed</div>
-        </div>
-      </div>
-
-      <!-- PINCODE -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">
-          Pincode <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          name="pincode"
-          [(ngModel)]="form.pincode"
-          required
-          pattern="^[0-9]{6}$"
-          maxlength="6"
-          #pincode="ngModel"
-          [class.is-invalid]="pincode.invalid && pincode.touched"
-          placeholder="Enter 6-digit pincode"
-        />
-        <div class="invalid-feedback" *ngIf="pincode.invalid && pincode.touched">
-          <div *ngIf="pincode.errors?.['required']">Pincode is required</div>
-          <div *ngIf="pincode.errors?.['pattern']">Must be exactly 6 digits</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="alert alert-danger" *ngIf="contactForm.invalid && contactForm.touched">
-      <strong>⚠️ Please fix the errors above before saving</strong>
-    </div>
-  </form>
+<div class="page-header fade-in">
+  <div class="page-title">
+    <h1>Add New Contact</h1>
+    <p>Fill in the details to create a new contact</p>
+  </div>
+  <button mat-stroked-button (click)="cancel()" class="btn-icon">
+    <mat-icon>arrow_back</mat-icon>
+    Back to Contacts
+  </button>
 </div>
 
-<div class="card-footer text-end bg-light">
-  <button class="btn btn-secondary me-2" (click)="cancel()">
-    Cancel
-  </button>
-  <button
-    class="btn btn-success"
-    (click)="save()"
-    [disabled]="contactForm.invalid"
-    data-testid="save-contact">
-    💾 Save Contact
-  </button>
+<div class="form-card fade-in">
+  <div class="form-header">
+    <div>
+      <h2>Contact Information</h2>
+      <p>All fields marked with * are required</p>
+    </div>
+    <mat-icon style="color: rgba(255,255,255,0.5); font-size: 48px; width: 48px; height: 48px;">
+      person_add
+    </mat-icon>
+  </div>
+
+  <div class="form-body">
+    <form #contactForm="ngForm">
+
+      <!-- PERSONAL INFO SECTION -->
+      <div class="section-label">👤 Personal Information</div>
+      <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Title *</mat-label>
+            <mat-select
+              name="title"
+              [(ngModel)]="form.title"
+              required
+              #title="ngModel">
+              <mat-option value="">Select</mat-option>
+              <mat-option value="Mr">Mr</mat-option>
+              <mat-option value="Mrs">Mrs</mat-option>
+              <mat-option value="Ms">Ms</mat-option>
+              <mat-option value="Dr">Dr</mat-option>
+            </mat-select>
+            <mat-error *ngIf="title.invalid && title.touched">Required</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-5 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>First Name *</mat-label>
+            <input
+              matInput
+              name="firstName"
+              [(ngModel)]="form.firstName"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #firstName="ngModel"
+              placeholder="Enter first name"
+            />
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-error *ngIf="firstName.errors?.['required'] && firstName.touched">
+              First name is required
+            </mat-error>
+            <mat-error *ngIf="firstName.errors?.['pattern'] && firstName.touched">
+              Only letters allowed
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-5 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Last Name *</mat-label>
+            <input
+              matInput
+              name="lastName"
+              [(ngModel)]="form.lastName"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #lastName="ngModel"
+              placeholder="Enter last name"
+            />
+            <mat-error *ngIf="lastName.errors?.['required'] && lastName.touched">
+              Last name is required
+            </mat-error>
+            <mat-error *ngIf="lastName.errors?.['pattern'] && lastName.touched">
+              Only letters allowed
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- CONTACT INFO SECTION -->
+      <div class="section-label">📱 Contact Details</div>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Mobile 1 *</mat-label>
+            <input
+              matInput
+              name="mobile1"
+              [(ngModel)]="form.mobile1"
+              required
+              pattern="^[0-9]{10}$"
+              maxlength="10"
+              #mobile1="ngModel"
+              placeholder="10-digit number"
+            />
+            <mat-icon matPrefix>phone</mat-icon>
+            <mat-error *ngIf="mobile1.errors?.['required'] && mobile1.touched">
+              Mobile is required
+            </mat-error>
+            <mat-error *ngIf="mobile1.errors?.['pattern'] && mobile1.touched">
+              Must be exactly 10 digits
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Mobile 2 (Optional)</mat-label>
+            <input
+              matInput
+              name="mobile2"
+              [(ngModel)]="form.mobile2"
+              pattern="^[0-9]{10}$"
+              maxlength="10"
+              #mobile2="ngModel"
+              placeholder="10-digit number"
+            />
+            <mat-icon matPrefix>phone_iphone</mat-icon>
+            <mat-error *ngIf="mobile2.errors?.['pattern'] && mobile2.touched">
+              Must be exactly 10 digits
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- ADDRESS SECTION -->
+      <div class="section-label">📍 Address Details</div>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>City *</mat-label>
+            <input
+              matInput
+              name="city"
+              [(ngModel)]="form.city"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #city="ngModel"
+              placeholder="Enter city"
+            />
+            <mat-icon matPrefix>location_city</mat-icon>
+            <mat-error *ngIf="city.errors?.['required'] && city.touched">City is required</mat-error>
+            <mat-error *ngIf="city.errors?.['pattern'] && city.touched">Only letters allowed</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>State *</mat-label>
+            <input
+              matInput
+              name="state"
+              [(ngModel)]="form.state"
+              required
+              pattern="^[a-zA-Z\s]+$"
+              #state="ngModel"
+              placeholder="Enter state"
+            />
+            <mat-icon matPrefix>map</mat-icon>
+            <mat-error *ngIf="state.errors?.['required'] && state.touched">State is required</mat-error>
+            <mat-error *ngIf="state.errors?.['pattern'] && state.touched">Only letters allowed</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Pincode *</mat-label>
+            <input
+              matInput
+              name="pincode"
+              [(ngModel)]="form.pincode"
+              required
+              pattern="^[0-9]{6}$"
+              maxlength="6"
+              #pincode="ngModel"
+              placeholder="6-digit code"
+            />
+            <mat-icon matPrefix>pin</mat-icon>
+            <mat-error *ngIf="pincode.errors?.['required'] && pincode.touched">Pincode is required</mat-error>
+            <mat-error *ngIf="pincode.errors?.['pattern'] && pincode.touched">Must be 6 digits</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="form-footer">
+    <button mat-stroked-button (click)="cancel()">
+      <mat-icon>close</mat-icon>
+      Cancel
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="save()"
+      [disabled]="contactForm.invalid"
+      class="btn-icon">
+      <mat-icon>save</mat-icon>
+      Save Contact
+    </button>
+  </div>
 </div>

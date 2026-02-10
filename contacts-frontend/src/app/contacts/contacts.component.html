@@ -1,206 +1,287 @@
-<h1>Contacts</h1>
-<div class="container mt-4">
-  <div class="row g-2 align-items-center mb-3">
-    <!-- SEARCH INPUT -->
-    <div class="col-md-7">
-      <input
-        class="form-control"
-        placeholder="Search contacts..."
-        [(ngModel)]="searchText"
-        (keyup.enter)="onSearchOrClear()"
-      />
-    </div>
+<!-- CONTACTS LIST PAGE -->
+<div class="page-header fade-in">
+  <div class="page-title">
+    <h1>All Contacts</h1>
+    <p>Manage and organize your contacts</p>
+  </div>
+</div>
 
-    <!-- SEARCH / CLEAR -->
-    <div class="col-md-1">
-      <button
-        class="btn w-100"
-        [ngClass]="{
-          'btn-primary': !isSearchActive,
-          'btn-danger': isSearchActive,
-        }"
-        (click)="onSearchOrClear()"
-      >
-        {{ isSearchActive ? 'Clear' : 'Search' }}
-      </button>
-    </div>
+<!-- SEARCH BAR (NO ACTION BUTTONS) -->
+<div class="search-bar fade-in">
+  <mat-form-field appearance="outline" class="search-field">
+     <input
+      matInput
+      placeholder="Search contacts..."
+      [(ngModel)]="searchText"
+      (keyup.enter)="onSearchOrClear()"
+    />
 
-    <!-- NEW CONTACT -->
-    <div class="col-md-auto">
-      <button class="btn btn-success" routerLink="/contacts/new">
-        <i class="bi bi-plus-circle me-1"></i>
-        New Contact
-      </button>
-    </div>
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
 
-    <!-- ADVANCED SEARCH -->
-    <div class="col-md-auto">
-      <button class="btn btn-outline-secondary" (click)="openAdvancedSearch()">
-        <i class="bi bi-sliders"></i> Advanced Search
-      </button>
-    </div>
 
-    <!-- EXPORT CSV -->
-    <div class="col-md-1">
-      <button class="btn btn-outline-primary w-100" (click)="exportCSV()">
-        <i class="bi bi-download"></i> CSV
-      </button>
-    </div>
+  <div class="action-buttons">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSearchOrClear()"
+      class="btn-icon"
+      style="height: 56px;">
+      <mat-icon>{{ isSearchActive ? 'close' : 'search' }}</mat-icon>
+      {{ isSearchActive ? 'Clear' : 'Search' }}
+    </button>
+
+    <button
+      mat-stroked-button
+      (click)="openAdvancedSearch()"
+      class="btn-icon"
+      style="height: 56px;">
+      <mat-icon>tune</mat-icon>
+      Advanced
+    </button>
+  </div>
+</div>
+
+<!-- CONTACTS TABLE CARD -->
+<div class="contacts-table-card fade-in">
+  <div class="table-header">
+    <h2>Contact List</h2>
+    <span class="total-count">{{ contacts().length }} contacts</span>
   </div>
 
-  <!-- SKELETON TABLE -->
-  <div *ngIf="loading()" class="table-responsive">
-    <table class="table table-bordered table-hover align-middle fixed-table">
-      <tbody>
-        <tr class="skeleton-row" *ngFor="let _ of [].constructor(limit)">
-          <td><div class="skeleton skeleton-sm"></div></td>
-          <td><div class="skeleton skeleton-md"></div></td>
-          <td><div class="skeleton skeleton-lg"></div></td>
-          <td><div class="skeleton skeleton-sm"></div></td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- LOADING STATE -->
+  <div *ngIf="loading()" style="padding: 40px; text-align: center;">
+    <mat-spinner diameter="50" style="margin: 0 auto;"></mat-spinner>
+    <p style="margin-top: 16px; color: var(--text-secondary);">Loading contacts...</p>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-responsive" *ngIf="!loading()">
-    <table class="table table-bordered table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th (click)="toggleSort()" title="Click to sort by First Name" style="cursor: pointer">
-            First Name
-            <span *ngIf="sortOrder === 'asc'" class="bi bi-sort-alpha-down ms-1"></span>
-            <span *ngIf="sortOrder === 'desc'" class="bi bi-sort-alpha-up ms-1"></span>
-          </th>
-          <th>Last Name</th>
-          <th>Mobile</th>
-          <th>City</th>
-          <th class="text-center">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let c of contacts()" class="fade-in-row">
-          <td>{{ c.firstName }}</td>
-          <td>{{ c.lastName }}</td>
-          <td>{{ c.mobile1 }}</td>
-          <td>{{ c.address?.city }}</td>
-          <td class="text-center text-nowrap">
-            <!-- EDIT BUTTON -->
-            <button class="btn btn-sm btn-primary me-2" [routerLink]="['/contacts/edit', c._id]">
-              Edit
-            </button>
-
-            <!-- DELETE BUTTON -->
-            <button
-              class="btn btn-sm btn-danger"
-              (click)="onDelete(c._id, c.firstName + ' ' + c.lastName)"
-            >
-               Delete
-            </button>
-          </td>
-        </tr>
-
-        <tr *ngIf="contacts().length === 0">
-          <td colspan="5" class="text-center text-muted">No contacts found</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ERROR STATE -->
+  <div *ngIf="error && !loading()" class="empty-state">
+    <mat-icon>error_outline</mat-icon>
+    <h3>Failed to Load Contacts</h3>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="fetchContacts()">
+      <mat-icon>refresh</mat-icon>
+      Retry
+    </button>
   </div>
 
-  <!-- PAGINATION + PAGE SIZE -->
-  <div class="d-flex justify-content-between align-items-center mt-3">
-    <!-- PAGE SIZE -->
-    <div class="d-flex align-items-center gap-2">
-      <span>Rows:</span>
-      <select
-        class="form-select form-select-sm"
-        style="width: 90px"
-        [(ngModel)]="limit"
-        (change)="onPageSizeChange()"
-      >
-        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">
-          {{ size }}
-        </option>
-      </select>
-    </div>
-    <span class="text-muted small"> Page {{ page }} of {{ totalPages }} </span>
+  <!-- EMPTY STATE -->
+  <div *ngIf="!loading() && !error && contacts().length === 0" class="empty-state">
+    <mat-icon>contacts</mat-icon>
+    <h3>No Contacts Found</h3>
+    <p>Start by adding your first contact</p>
+    <button mat-raised-button color="primary" routerLink="/contacts/new">
+      <mat-icon>person_add</mat-icon>
+      Add Contact
+    </button>
+  </div>
 
-    <!-- PAGINATION -->
-    <ul class="pagination mb-0">
-      <li class="page-item" [class.disabled]="page === 1">
-        <button class="page-link" (click)="prevPage()">Previous</button>
-      </li>
+  <!-- CONTACTS TABLE -->
+  <table
+    mat-table
+    [dataSource]="contacts()"
+    *ngIf="!loading() && !error && contacts().length > 0"
+    class="mat-elevation-z0">
 
-      <li class="page-item" *ngFor="let p of getPageNumbers()" [class.active]="p === page">
-        <button class="page-link" (click)="goToPage(p)">
-          {{ p }}
+    <!-- CONTACT COLUMN (Name + Avatar) -->
+    <ng-container matColumnDef="contact">
+      <th mat-header-cell *matHeaderCellDef (click)="toggleSort()" style="cursor: pointer;">
+        NAME
+        <mat-icon style="font-size: 16px; vertical-align: middle;">
+          {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+        </mat-icon>
+      </th>
+      <td mat-cell *matCellDef="let contact">
+        <div class="contact-name">
+          <span class="contact-avatar">
+            {{ contact.firstName?.charAt(0)?.toUpperCase() || 'A' }}
+          </span>
+          <div>
+            <strong>{{ contact.title }} {{ contact.firstName }} {{ contact.lastName }}</strong>
+            <br>
+            <small style="color: var(--text-secondary);">{{ contact.mobile2 || 'No alternate' }}</small>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- MOBILE COLUMN -->
+    <ng-container matColumnDef="mobile">
+      <th mat-header-cell *matHeaderCellDef>MOBILE</th>
+      <td mat-cell *matCellDef="let contact">
+        <mat-icon style="font-size: 16px; vertical-align: middle; margin-right: 6px; color: var(--primary);">
+          phone
+        </mat-icon>
+        {{ contact.mobile1 }}
+      </td>
+    </ng-container>
+
+    <!-- CITY COLUMN -->
+    <ng-container matColumnDef="city">
+      <th mat-header-cell *matHeaderCellDef>LOCATION</th>
+      <td mat-cell *matCellDef="let contact">
+        <mat-icon style="font-size: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent);">
+          location_on
+        </mat-icon>
+        {{ contact.address?.city }}, {{ contact.address?.state }}
+      </td>
+    </ng-container>
+
+    <!-- ACTIONS COLUMN -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+      <td mat-cell *matCellDef="let contact">
+        <button
+          mat-icon-button
+          color="primary"
+          [routerLink]="['/contacts/edit', contact._id]"
+          matTooltip="Edit Contact">
+          <mat-icon>edit</mat-icon>
         </button>
-      </li>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="onDelete(contact._id, contact.firstName + ' ' + contact.lastName)"
+          matTooltip="Delete Contact">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
 
-      <li class="page-item" [class.disabled]="page === totalPages">
-        <button class="page-link" (click)="nextPage()">Next</button>
-      </li>
-    </ul>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <!-- PAGINATION -->
+  <div class="pagination-bar" *ngIf="!loading() && contacts().length > 0">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 13px; color: var(--text-secondary);">Rows:</span>
+      <mat-form-field appearance="outline" style="width: 80px;">
+        <mat-select [(ngModel)]="limit" (selectionChange)="onPageSizeChange()">
+          <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+            {{ size }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="page-info">
+      Page {{ page }} of {{ totalPages }}
+    </div>
+
+    <div class="page-controls">
+      <button mat-icon-button (click)="prevPage()" [disabled]="page === 1">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <button
+        mat-button
+        *ngFor="let p of getPageNumbers()"
+        (click)="goToPage(p)"
+        [class.active]="p === page">
+        {{ p }}
+      </button>
+
+      <button mat-icon-button (click)="nextPage()" [disabled]="page === totalPages">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
   </div>
 </div>
 
 <!-- ADVANCED SEARCH MODAL -->
-<div class="modal fade show d-block" *ngIf="showAdvancedSearch">
-  <div class="modal-dialog modal-md">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Advanced Search</h5>
-        <button class="btn-close" (click)="closeAdvancedSearch()"></button>
-      </div>
+<div
+  *ngIf="showAdvancedSearch"
+  style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;"
+  (click)="closeAdvancedSearch()">
 
-      <div class="modal-body">
-        <input
-          class="form-control mb-2"
-          placeholder="First Name (letters only)"
-          [(ngModel)]="advancedSearch.firstName"
-          [class.is-invalid]="advancedErrors.firstName"
-        />
+  <div
+    style="
+      background: white;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+    (click)="$event.stopPropagation()">
 
-        <input
-          class="form-control mb-2"
-          placeholder="Last Name (letters only)"
-          [(ngModel)]="advancedSearch.lastName"
-          [class.is-invalid]="advancedErrors.lastName"
-        />
+    <div style="
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 24px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;">
+      <h2 style="color: white; margin: 0; font-size: 20px;">Advanced Search</h2>
+      <button mat-icon-button (click)="closeAdvancedSearch()" style="color: white;">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
 
-        <input
-          class="form-control mb-2"
-          placeholder="Mobile (10 digits)"
-          [(ngModel)]="advancedSearch.mobile"
-          [class.is-invalid]="advancedErrors.mobile"
-        />
+    <div style="padding: 24px;">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>First Name</mat-label>
+            <input matInput [(ngModel)]="advancedSearch.firstName" />
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-error *ngIf="advancedErrors.firstName">Only letters allowed</mat-error>
+          </mat-form-field>
+        </div>
 
-        <input
-          class="form-control"
-          placeholder="City (letters only)"
-          [(ngModel)]="advancedSearch.city"
-          [class.is-invalid]="advancedErrors.city"
-        />
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Last Name</mat-label>
+            <input matInput [(ngModel)]="advancedSearch.lastName" />
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-error *ngIf="advancedErrors.lastName">Only letters allowed</mat-error>
+          </mat-form-field>
+        </div>
 
-        <div
-          class="text-danger mt-2"
-          *ngIf="
-            advancedErrors.firstName ||
-            advancedErrors.lastName ||
-            advancedErrors.mobile ||
-            advancedErrors.city
-          "
-        >
-          ❌ Please enter valid data
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Mobile</mat-label>
+            <input matInput [(ngModel)]="advancedSearch.mobile" maxlength="10" />
+            <mat-icon matPrefix>phone</mat-icon>
+            <mat-error *ngIf="advancedErrors.mobile">Must be 10 digits</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>City</mat-label>
+            <input matInput [(ngModel)]="advancedSearch.city" />
+            <mat-icon matPrefix>location_city</mat-icon>
+            <mat-error *ngIf="advancedErrors.city">Only letters allowed</mat-error>
+          </mat-form-field>
         </div>
       </div>
+    </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeAdvancedSearch()">Cancel</button>
-
-        <button class="btn btn-primary" (click)="applyAdvancedSearch()">Apply Search</button>
-      </div>
+    <div style="
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;">
+      <button mat-stroked-button (click)="closeAdvancedSearch()">
+        Cancel
+      </button>
+      <button mat-raised-button color="primary" (click)="applyAdvancedSearch()">
+        <mat-icon>search</mat-icon>
+        Search
+      </button>
     </div>
   </div>
 </div>

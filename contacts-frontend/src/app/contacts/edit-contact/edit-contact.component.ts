@@ -1,19 +1,37 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ContactsService } from '../../services/contacts.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-edit-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './edit-contact.component.html'
 })
 export class EditContactComponent implements OnInit {
 
   contactId = '';
   errorMessage = '';
+  loading = false;         // ← ADDED: used in HTML *ngIf="loading"
 
   form = {
     title: '',
@@ -30,7 +48,9 @@ export class EditContactComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private contactsService: ContactsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,  // ← FIXED: now properly imported above
+    private snackBar: MatSnackBar,   // ← ADDED: for toast notifications
+    private zone: NgZone             // ← ADDED: for zone-safe toasts
   ) {}
 
   ngOnInit(): void {
@@ -45,15 +65,17 @@ export class EditContactComponent implements OnInit {
   }
 
   loadContact(): void {
+    this.loading = true;    // ← Show spinner while loading
+
     this.contactsService.getContactById(this.contactId).subscribe({
       next: (response: any) => {
         if (!response) {
           this.errorMessage = 'Invalid response from server';
+          this.loading = false;
           this.cdr.detectChanges();
           return;
         }
 
-        // Map the data
         this.form = {
           title: response.title || '',
           firstName: response.firstName || '',
@@ -65,19 +87,20 @@ export class EditContactComponent implements OnInit {
           pincode: response.address?.pincode || ''
         };
 
+        this.loading = false;   // ← Hide spinner after data loads
         this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = `Failed to load contact: ${error.status} - ${error.message}`;
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
   onUpdate(): void {
-    // Validate form before submitting
     if (!this.validateForm()) {
-      alert('⚠️ Please fill all mandatory fields correctly!');
+      this.showToast('⚠️ Please fill all mandatory fields correctly!', 'error');
       return;
     }
 
@@ -96,11 +119,12 @@ export class EditContactComponent implements OnInit {
 
     this.contactsService.updateContact(this.contactId, payload).subscribe({
       next: () => {
-        alert('✅ Contact updated successfully!');
-        this.router.navigate(['/contacts']);
+        this.showToast('✅ Contact updated successfully!', 'success');
+        setTimeout(() => this.router.navigate(['/contacts']), 1000);
+        // ↑ Small delay so user sees the success toast before navigating
       },
       error: (error) => {
-        alert('❌ Update failed: ' + error.message);
+        this.showToast('❌ Update failed: ' + error.message, 'error');
       }
     });
   }
@@ -117,7 +141,20 @@ export class EditContactComponent implements OnInit {
     return true;
   }
 
-  goBack(): void {
+  cancel(): void {
+    // ← ADDED: was missing, used in HTML (click)="cancel()"
     this.router.navigate(['/contacts']);
+  }
+
+  showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    // ← ADDED: Material toast instead of alert()
+    this.zone.run(() => {
+      this.snackBar.open(message, '✕', {
+        duration: 3500,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+        panelClass: type === 'success' ? ['toast-success'] : ['toast-error']
+      });
+    });
   }
 }

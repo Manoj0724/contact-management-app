@@ -1,0 +1,36 @@
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>📋 ContactsPro</h2>
+      <p>Contact Management System</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/contacts" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon>people</mat-icon>
+        All Contacts
+      </a>
+
+      <a routerLink="/contacts/new" routerLinkActive="active">
+        <mat-icon>person_add</mat-icon>
+        Add Contact
+      </a>
+
+      <!-- CSV EXPORT BUTTON IN SIDEBAR -->
+      <button class="sidebar-action-btn" (click)="exportCSV()">
+        <mat-icon>download</mat-icon>
+        Export CSV
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p>Version 1.0.0</p>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

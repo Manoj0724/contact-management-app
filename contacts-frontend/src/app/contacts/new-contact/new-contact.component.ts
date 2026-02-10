@@ -3,12 +3,26 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ContactsService } from '../../services/contacts.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-new-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSnackBarModule,  // ← Fixed: Added proper import
+  ],             // ← Fixed: Added comma after ]
   templateUrl: './new-contact.component.html'
 })
 export class NewContactComponent {
@@ -32,7 +46,6 @@ export class NewContactComponent {
   ) {}
 
   save(): void {
-    // Validate form before submitting
     if (!this.validateForm()) {
       alert('⚠️ Please fill all mandatory fields correctly!');
       return;
@@ -56,7 +69,7 @@ export class NewContactComponent {
         this.showToast('✅ Contact added successfully!', 'success');
         this.router.navigate(['/contacts']);
       },
-      error: (error) => {
+      error: () => {
         this.showToast('❌ Failed to save contact', 'error');
       }
     });
