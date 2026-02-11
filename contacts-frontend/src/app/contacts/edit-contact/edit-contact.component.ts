@@ -99,35 +99,31 @@ export class EditContactComponent implements OnInit {
   }
 
   onUpdate(): void {
-    if (!this.validateForm()) {
-      this.showToast('⚠️ Please fill all mandatory fields correctly!', 'error');
-      return;
+  const payload = {
+    title: this.form.title,
+    firstName: this.form.firstName,
+    lastName: this.form.lastName,
+    mobile1: this.form.mobile1,
+    mobile2: this.form.mobile2 || undefined,
+    address: {
+      city: this.form.city,
+      state: this.form.state,
+      pincode: this.form.pincode
     }
+  };
 
-    const payload = {
-      title: this.form.title,
-      firstName: this.form.firstName,
-      lastName: this.form.lastName,
-      mobile1: this.form.mobile1,
-      mobile2: this.form.mobile2 || undefined,
-      address: {
-        city: this.form.city,
-        state: this.form.state,
-        pincode: this.form.pincode
-      }
-    };
-
-    this.contactsService.updateContact(this.contactId, payload).subscribe({
-      next: () => {
-        this.showToast('✅ Contact updated successfully!', 'success');
-        setTimeout(() => this.router.navigate(['/contacts']), 1000);
-        // ↑ Small delay so user sees the success toast before navigating
-      },
-      error: (error) => {
-        this.showToast('❌ Update failed: ' + error.message, 'error');
-      }
-    });
-  }
+  this.contactsService.updateContact(this.contactId, payload).subscribe({
+    next: () => {
+      // ✅ Material toast - no more alert()
+      this.showToast('Contact updated successfully!', 'success');
+      setTimeout(() => this.router.navigate(['/contacts']), 1000);
+    },
+    error: (error: any) => {
+      // ✅ Material toast - no more alert()
+      this.showToast('Failed to update contact: ' + error.message, 'error');
+    }
+  });
+}
 
   validateForm(): boolean {
     if (!this.form.title) return false;
@@ -146,15 +142,17 @@ export class EditContactComponent implements OnInit {
     this.router.navigate(['/contacts']);
   }
 
-  showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    // ← ADDED: Material toast instead of alert()
-    this.zone.run(() => {
-      this.snackBar.open(message, '✕', {
-        duration: 3500,
-        horizontalPosition: 'right',
-        verticalPosition: 'top',
-        panelClass: type === 'success' ? ['toast-success'] : ['toast-error']
-      });
+ showToast(
+  message: string,
+  type: 'success' | 'error' | 'warning' = 'success'
+): void {
+  this.zone.run(() => {
+    this.snackBar.open(message, '✕', {
+      duration: 3500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+      panelClass: [`toast-${type}`]
     });
-  }
+  });
+}
 }

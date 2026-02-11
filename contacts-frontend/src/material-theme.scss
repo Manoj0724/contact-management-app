@@ -699,3 +699,125 @@ mat-spinner {
   border-radius: 16px !important;
   overflow: hidden;
 }
+// =====================
+// MATERIAL TOAST STYLES
+// =====================
+.toast-success {
+  background: #1b5e20 !important;
+  color: white !important;
+  border-radius: 10px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+
+  .mat-mdc-snack-bar-action {
+    color: #a5d6a7 !important;
+  }
+}
+
+.toast-error {
+  background: #b71c1c !important;
+  color: white !important;
+  border-radius: 10px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+
+  .mat-mdc-snack-bar-action {
+    color: #ef9a9a !important;
+  }
+}
+
+.toast-warning {
+  background: #e65100 !important;
+  color: white !important;
+  border-radius: 10px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+
+  .mat-mdc-snack-bar-action {
+    color: #ffcc80 !important;
+  }
+}
+
+// =====================
+// CONFIRM DIALOG STYLES
+// =====================
+.confirm-dialog-panel {
+  .mat-mdc-dialog-container {
+    border-radius: 16px !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .mdc-dialog__surface {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+}
+
+// ========================
+// ADVANCED SEARCH MODAL
+// ========================
+.adv-search-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.adv-search-container {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+.adv-search-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    color: white;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  button { color: white; }
+}
+
+.adv-search-body {
+  padding: 24px;
+}
+
+.adv-search-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

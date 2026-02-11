@@ -13,6 +13,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from './contact-dialog/contact-dialog.component';
+
 
 @Component({
   selector: 'app-contacts',
@@ -31,12 +34,12 @@ import { MatChipsModule } from '@angular/material/chips';
     MatTooltipModule,
     MatChipsModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './contacts.component.html'
 })
 export class ContactsComponent implements OnInit {
   private readonly MIN_SKELETON_TIME = 800;
-  pendingEditId: string | null = null;
   displayedColumns: string[] = ['contact', 'mobile', 'city', 'actions'];
 
   contacts = signal<any[]>([]);
@@ -74,29 +77,33 @@ export class ContactsComponent implements OnInit {
     private snackBar: MatSnackBar,
     private zone: NgZone,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private dialog: MatDialog,
+
   ) {}
 
- ngOnInit(): void {
-  const savedLimit = localStorage.getItem('contacts_page_size');
-  if (savedLimit) {
-    this.limit = Number(savedLimit);
+  ngOnInit(): void {
+    const savedLimit = localStorage.getItem('contacts_page_size');
+    if (savedLimit) {
+      this.limit = Number(savedLimit);
+    }
+
+    const currentPath = this.route.snapshot.routeConfig?.path;
+
+    if (currentPath === 'contacts' || currentPath === '') {
+      this.fetchContacts();
+    }
+
+    if (currentPath === 'search') {
+      this.showAdvancedSearch = true;
+    }
+
+    // Listen for CSV export from sidebar
+    window.addEventListener('export-csv', () => {
+      this.exportCSV();
+    });
   }
 
-  const currentPath = this.route.snapshot.routeConfig?.path;
-
-  if (currentPath === 'contacts' || currentPath === '') {
-    this.fetchContacts();
-  }
-
-  if (currentPath === 'search') {
-    this.showAdvancedSearch = true;
-  }
-
-  window.addEventListener('export-csv', () => {
-    this.exportCSV();
-  });
-}
   fetchContacts(): void {
     const startTime = Date.now();
     this.loading.set(true);
@@ -146,15 +153,13 @@ export class ContactsComponent implements OnInit {
     this.advancedErrors = { firstName: false, lastName: false, mobile: false, city: false };
   }
 
- openAdvancedSearch(): void {
-  this.showAdvancedSearch = true;
-  // ← REMOVED router.navigate - was causing both nav items to highlight
-}
+  openAdvancedSearch(): void {
+    this.showAdvancedSearch = true;
+  }
 
-closeAdvancedSearch(): void {
-  this.showAdvancedSearch = false;
-  // ← REMOVED router.navigate
-}
+  closeAdvancedSearch(): void {
+    this.showAdvancedSearch = false;
+  }
 
   validateAdvancedSearch(): boolean {
     const nameRegex = /^[a-zA-Z\s]*$/;
@@ -190,19 +195,45 @@ closeAdvancedSearch(): void {
 
   exportCSV(): void {
     const data = this.contacts();
-    if (!data || data.length === 0) { alert('No contacts to export'); return; }
+
+    if (!data || data.length === 0) {
+      this.showToast('No contacts to export!', 'error');
+      return;
+    }
 
     const headers = ['Title', 'First Name', 'Last Name', 'Mobile 1', 'Mobile 2', 'City', 'State', 'Pincode'];
-    const rows = data.map(c => [c.title || '', c.firstName || '', c.lastName || '', c.mobile1 || '', c.mobile2 || '', c.address?.city || '', c.address?.state || '', c.address?.pincode || '']);
-    const csvContent = [headers.join(','), ...rows.map(row => row.map(field => `"${field}"`).join(','))].join('\n');
+    const rows = data.map(c => [
+      c.title || '',
+      c.firstName || '',
+      c.lastName || '',
+      c.mobile1 || '',
+      c.mobile2 || '',
+      c.address?.city || '',
+      c.address?.state || '',
+      c.address?.pincode || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'contacts.csv';
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+
+    this.showToast('✅ CSV exported successfully!', 'success');
   }
 
   onPageSizeChange(): void {
@@ -211,11 +242,25 @@ closeAdvancedSearch(): void {
     this.fetchContacts();
   }
 
-  nextPage(): void { if (this.page < this.totalPages) { this.page++; this.fetchContacts(); } }
-  prevPage(): void { if (this.page > 1) { this.page--; this.fetchContacts(); } }
+  nextPage(): void {
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.fetchContacts();
+    }
+  }
+
+  prevPage(): void {
+    if (this.page > 1) {
+      this.page--;
+      this.fetchContacts();
+    }
+  }
 
   goToPage(p: number): void {
-    if (p !== this.page) { this.page = p; this.fetchContacts(); }
+    if (p !== this.page) {
+      this.page = p;
+      this.fetchContacts();
+    }
   }
 
   getPageNumbers(): number[] {
@@ -243,21 +288,34 @@ closeAdvancedSearch(): void {
     });
   }
 
+  // ✅ DELETE WITH BROWSER CONFIRM
   onDelete(contactId: string, contactName: string): void {
-    const confirmed = confirm(`⚠️ Are you sure you want to delete "${contactName}"?\n\nThis action cannot be undone.`);
-    if (!confirmed) return;
+  // ✅ Material Dialog - no more browser confirm()!
+  const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+    panelClass: 'confirm-dialog-panel',
+    disableClose: true,
+    data: {
+      title: 'Delete Contact',
+      message: `Are you sure you want to delete "${contactName}"? This action cannot be undone.`,
+      confirmText: 'Yes, Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    }
+  });
 
+  dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+    if (!confirmed) return;
     this.loading.set(true);
     this.contactsService.deleteContact(contactId).subscribe({
       next: () => {
-        this.showToast('✅ Contact deleted successfully!', 'success');
+        this.showToast('Contact deleted successfully!', 'success');
         this.fetchContacts();
       },
-      error: (error) => {
-        console.error('Delete error:', error);
-        this.showToast('❌ Failed to delete contact', 'error');
+      error: (error: any) => {
+        this.showToast('Failed to delete contact', 'error');
         this.loading.set(false);
       }
     });
-  }
+  });
+}
 }

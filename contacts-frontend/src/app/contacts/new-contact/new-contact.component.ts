@@ -21,8 +21,8 @@ import { MatSelectModule } from '@angular/material/select';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatSnackBarModule,  // ← Fixed: Added proper import
-  ],             // ← Fixed: Added comma after ]
+    MatSnackBarModule,
+  ],
   templateUrl: './new-contact.component.html'
 })
 export class NewContactComponent {
@@ -46,7 +46,8 @@ export class NewContactComponent {
   ) {}
 
   save(): void {
-    if (!this.validateForm()) {
+    // Validate form before submitting
+    if (!this.isFormValid()) {
       alert('⚠️ Please fill all mandatory fields correctly!');
       return;
     }
@@ -69,13 +70,14 @@ export class NewContactComponent {
         this.showToast('✅ Contact added successfully!', 'success');
         this.router.navigate(['/contacts']);
       },
-      error: () => {
+      error: (error) => {
         this.showToast('❌ Failed to save contact', 'error');
       }
     });
   }
 
-  validateForm(): boolean {
+  isFormValid(): boolean {
+    // Check all required fields
     if (!this.form.title) return false;
     if (!this.form.firstName || !/^[a-zA-Z\s]+$/.test(this.form.firstName)) return false;
     if (!this.form.lastName || !/^[a-zA-Z\s]+$/.test(this.form.lastName)) return false;

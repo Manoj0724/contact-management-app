@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
-import { ContactsComponent } from './contacts/contacts.component';
 
 @Component({
   selector: 'app-root',

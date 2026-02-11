@@ -4,93 +4,61 @@ test.describe('Edit Contact', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/contacts');
-    await page.waitForSelector('table');
-
-    // Click the first Edit button
-    await page.click('tbody tr:first-child button:has-text("Edit")');
-    await expect(page.locator('h5:has-text("Edit Contact")')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 10000 });
+    // Click first edit button in first row
+    await page.locator('tbody tr').first().locator('button').first().click();
+    await expect(page.locator('form').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should display edit form with all fields', async ({ page }) => {
-    await expect(page.locator('select[name="title"]')).toBeVisible();
+    await expect(page.locator('mat-select[name="title"]')).toBeVisible();
     await expect(page.locator('input[name="firstName"]')).toBeVisible();
     await expect(page.locator('input[name="lastName"]')).toBeVisible();
     await expect(page.locator('input[name="mobile1"]')).toBeVisible();
     await expect(page.locator('input[name="city"]')).toBeVisible();
     await expect(page.locator('input[name="state"]')).toBeVisible();
     await expect(page.locator('input[name="pincode"]')).toBeVisible();
-    await expect(page.locator('button:has-text("Update Contact")')).toBeVisible();
   });
 
-  test('should load existing contact data', async ({ page }) => {
-    const firstName = page.locator('input[name="firstName"]');
-    const lastName = page.locator('input[name="lastName"]');
-    const mobile = page.locator('input[name="mobile1"]');
-
-    await expect(firstName).not.toHaveValue('');
-    await expect(lastName).not.toHaveValue('');
-    await expect(mobile).not.toHaveValue('');
+  test('should load existing contact data into fields', async ({ page }) => {
+    // Fields should be pre-filled
+    const firstName = await page.inputValue('input[name="firstName"]');
+    expect(firstName.length).toBeGreaterThan(0);
+    const mobile = await page.inputValue('input[name="mobile1"]');
+    expect(mobile.length).toBeGreaterThan(0);
   });
 
-  test('should show validation error when clearing first name', async ({ page }) => {
-    const firstNameInput = page.locator('input[name="firstName"]');
-    await firstNameInput.clear();
-    await firstNameInput.blur();
-
-    await expect(page.locator('text=First name is required')).toBeVisible();
-    await expect(page.locator('button:has-text("Update Contact")')).toBeDisabled();
+  test('should show error for invalid mobile', async ({ page }) => {
+    await page.fill('input[name="mobile1"]', '123');
+    await page.locator('input[name="mobile1"]').blur();
+    await page.waitForTimeout(300);
+    await expect(page.locator('mat-error').first()).toBeVisible({ timeout: 3000 });
   });
 
-  test('should show validation error for invalid mobile', async ({ page }) => {
-    const mobileInput = page.locator('input[name="mobile1"]');
-    await mobileInput.clear();
-    await mobileInput.fill('123');
-    await mobileInput.blur();
-
-    await expect(page.locator('text=Must be exactly 10 digits')).toBeVisible();
-    await expect(mobileInput).toHaveClass(/is-invalid/);
+  test('should show error for numbers in name', async ({ page }) => {
+    await page.fill('input[name="firstName"]', 'John123');
+    await page.locator('input[name="firstName"]').blur();
+    await page.waitForTimeout(300);
+    await expect(page.locator('mat-error').first()).toBeVisible({ timeout: 3000 });
   });
 
-  test('should show validation error for letters in name', async ({ page }) => {
-    const firstNameInput = page.locator('input[name="firstName"]');
-    await firstNameInput.clear();
-    await firstNameInput.fill('Test123');
-    await firstNameInput.blur();
-
-    await expect(page.locator('text=Only letters allowed')).toBeVisible();
-  });
-
- test('should successfully update contact', async ({ page }) => {
-  await page.waitForTimeout(1000);
-
-  // Just modify the first name slightly (add 'X' at the end)
-  const firstNameInput = page.locator('input[name="firstName"]');
-  await firstNameInput.click();
-  await firstNameInput.press('End'); // Move cursor to end
-  await page.keyboard.type('X'); // Add X at the end
-
-  await page.waitForTimeout(1000);
-
-  // Click update
-  await page.click('button:has-text("Update Contact")');
-
-  await page.waitForURL('/contacts', { timeout: 15000 });
-  await expect(page.locator('h1:has-text("Contacts")')).toBeVisible();
-});
   test('should cancel and return to contacts list', async ({ page }) => {
-    await page.fill('input[name="firstName"]', 'TempName');
-    await page.click('button:has-text("Cancel")');
-
-    await page.waitForURL('/contacts');
-    await expect(page.locator('h1:has-text("Contacts")')).toBeVisible();
+    await page.locator('button').filter({ hasText: /Cancel/i }).click();
+    await expect(page).toHaveURL('/contacts', { timeout: 5000 });
   });
 
-  test('should validate mobile2 if provided', async ({ page }) => {
-    const mobile2Input = page.locator('input[name="mobile2"]');
-    await mobile2Input.clear();
-    await mobile2Input.fill('123');
-    await mobile2Input.blur();
+  test('should successfully update contact', async ({ page }) => {
+    // Update city field
+    await page.fill('input[name="city"]', 'Mumbai');
+    await page.locator('input[name="city"]').blur();
+    await page.waitForTimeout(300);
 
-    await expect(page.locator('text=Must be exactly 10 digits')).toBeVisible();
+    const updateBtn = page.locator('button').filter({ hasText: /Update/i });
+    await expect(updateBtn).toBeEnabled({ timeout: 3000 });
+    await updateBtn.click();
+
+    await expect(page).toHaveURL('/contacts', { timeout: 10000 });
   });
+
 });

@@ -1,3 +1,11 @@
+## [1.2.0] - 2026-02-XX
+
+### Changed
+- Migrated entire UI from Bootstrap to Angular Material
+- Replaced buttons, inputs, dialogs, and forms with Material components
+- Improved UI consistency and accessibility
+- Updated templates and styles to Material Design guidelines
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
