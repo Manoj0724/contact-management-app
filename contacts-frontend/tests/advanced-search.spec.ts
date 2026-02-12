@@ -4,78 +4,62 @@ test.describe('Advanced Search', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/contacts');
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
+    await page.waitForSelector('h1:has-text("All Contacts")', { timeout: 10000 });
   });
 
   test('should open advanced search', async ({ page }) => {
-    // Advanced button is the 2nd button in action-buttons
-    const advBtn = page.locator('.action-buttons button').nth(1);
-    await expect(advBtn).toBeVisible({ timeout: 5000 });
-    await advBtn.click();
-    // Check dialog opened - either our custom or mat-dialog
-    await expect(
-      page.locator('.adv-search-container').first()
-    ).toBeVisible({ timeout: 5000 });
+    await page.click('button:has-text("Advanced")');
+    await page.waitForSelector('.dialog-backdrop', { timeout: 5000 });
+    await expect(page.locator('.adv-search-container')).toBeVisible();
+    await expect(page.locator('h2:has-text("Advanced Search")')).toBeVisible();
   });
 
   test('should display all search fields', async ({ page }) => {
-    const advBtn = page.locator('.action-buttons button').nth(1);
-    await advBtn.click();
+    await page.click('button:has-text("Advanced")');
+    await page.waitForSelector('.dialog-backdrop', { timeout: 5000 });
 
-    // Wait for dialog
-    const dialog = page.locator('.adv-search-container').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
-
-    // Check inputs exist inside dialog
-    const inputs = dialog.locator('input');
-    const count = await inputs.count();
-    expect(count).toBeGreaterThanOrEqual(3);
+    await expect(page.locator('mat-label:has-text("First Name")')).toBeVisible();
+    await expect(page.locator('mat-label:has-text("Last Name")')).toBeVisible();
+    await expect(page.locator('mat-label:has-text("Mobile")')).toBeVisible();
+    await expect(page.locator('mat-label:has-text("City")')).toBeVisible();
   });
 
   test('should close with Cancel button', async ({ page }) => {
-    const advBtn = page.locator('.action-buttons button').nth(1);
-    await advBtn.click();
+    await page.click('button:has-text("Advanced")');
+    await page.waitForSelector('.dialog-backdrop', { timeout: 5000 });
 
-    const dialog = page.locator('.adv-search-container').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
+    const dialogFooter = page.locator('.adv-search-footer');
+    await dialogFooter.locator('button:has-text("Cancel")').click();
 
-    // Click Cancel - it's in dialog-footer
-    const cancelBtn = page.locator('.adv-search-footer button')
-                          .filter({ hasText: /Cancel/i }).first();
-    await cancelBtn.click();
-
-    await expect(
-      page.locator('.adv-search-container').first()
-    ).not.toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
+    await expect(page.locator('.dialog-backdrop')).not.toBeVisible();
   });
 
   test('should apply search and filter results', async ({ page }) => {
-    const advBtn = page.locator('.action-buttons button').nth(1);
-    await advBtn.click();
+    // Click Advanced button
+    await page.click('button:has-text("Advanced")');
 
-    const dialog = page.locator('.adv-search-container').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
+    // Wait for dialog to appear
+    await page.waitForSelector('.dialog-backdrop', { timeout: 5000 });
+    await page.waitForSelector('.adv-search-container', { timeout: 5000 });
 
-    // Fill last input field (City)
-    const inputs = dialog.locator('input');
-    const count = await inputs.count();
-    if (count > 0) {
-      await inputs.last().fill('Delhi');
-    }
+    // Fill first input in the dialog
+    const advSearchContainer = page.locator('.adv-search-container');
+    const firstInput = advSearchContainer.locator('input').first();
+    await firstInput.waitFor({ state: 'visible', timeout: 5000 });
+    await firstInput.fill('Amit');
 
-    // Click Search button in dialog footer
-    const searchBtn = page.locator('.adv-search-footer button')
-                          .filter({ hasText: /Search/i }).first();
-    await searchBtn.click();
+    // Click Search button in the footer
+    const dialogFooter = page.locator('.adv-search-footer');
+    const searchButton = dialogFooter.locator('button:has-text("Search")');
+    await searchButton.waitFor({ state: 'visible', timeout: 5000 });
+    await searchButton.click();
 
-    // Dialog should close
-    await expect(
-      page.locator('.adv-search-container').first()
-    ).not.toBeVisible({ timeout: 5000 });
+    // Wait for dialog to close
+    await page.waitForSelector('.dialog-backdrop', { state: 'hidden', timeout: 5000 });
 
-    // Results should show
-    await expect(page.locator('table, .empty-state')).toBeVisible({ timeout: 8000 });
+    // Verify search is active
+    await expect(page.locator('button:has-text("Clear")')).toBeVisible({ timeout: 5000 });
   });
 
 });

@@ -193,6 +193,7 @@
 <!-- ADVANCED SEARCH MODAL -->
 <div
   *ngIf="showAdvancedSearch"
+  class="dialog-backdrop"
   style="
     position: fixed;
     top: 0;
@@ -208,6 +209,7 @@
   (click)="closeAdvancedSearch()">
 
   <div
+    class="adv-search-container"
     style="
       background: white;
       border-radius: 12px;
@@ -269,12 +271,14 @@
       </div>
     </div>
 
-    <div style="
-      padding: 20px 24px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;">
+    <div
+      class="adv-search-footer"
+      style="
+        padding: 20px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;">
       <button mat-stroked-button (click)="closeAdvancedSearch()">
         Cancel
       </button>
