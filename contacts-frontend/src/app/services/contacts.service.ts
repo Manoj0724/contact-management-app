@@ -6,66 +6,69 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ContactsService {
-
-  private baseUrl = '/api/contacts';
+  private apiUrl = 'http://localhost:5000/api/contacts';
 
   constructor(private http: HttpClient) {}
 
-  // ========================
-  // GET CONTACTS (LIST)
-  // ========================
   getContacts(
-    page: number,
-    limit: number,
-    query: string = '',
-    sortBy: string = 'firstName',
-    sortOrder: 'asc' | 'desc' = 'asc'
-  ): Observable<any> {
+  page: number = 1,
+  limit: number = 10,
+  search: string = '',
+  sortBy: string = 'firstName',
+  sortOrder: string = 'asc',
+  favoritesOnly: boolean = false,
+  group: string = ''  // ← ADD THIS
+): Observable<any> {
+  let params = new HttpParams()
+    .set('page', page.toString())
+    .set('limit', limit.toString())
+    .set('sortBy', sortBy)
+    .set('sortOrder', sortOrder);
 
-    let params = new HttpParams()
-      .set('page', page)
-      .set('limit', limit)
-      .set('sortBy', sortBy)
-      .set('sortOrder', sortOrder);
-
-    if (query) {
-      params = params.set('q', query);
-    }
-
-    return this.http.get<any>(`${this.baseUrl}/paginate`, { params });
+  if (search) {
+    params = params.set('search', search);
   }
 
-  // ========================
-  // GET SINGLE CONTACT
-  // ========================
-getContactById(id: string): Observable<any> {
-  console.log('🌐 SERVICE: Fetching contact with ID:', id);
-  return this.http.get<any>(`/api/contacts/${id}`, {
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
-    }
-  });
+  if (favoritesOnly) {
+    params = params.set('favorites', 'true');
+  }
+
+  if (group) {                           // ← ADD THIS
+    params = params.set('group', group); // ← ADD THIS
+  }                                      // ← ADD THIS
+
+  return this.http.get(this.apiUrl, { params });
 }
-
-  // ========================
-  // CREATE CONTACT
-  // ========================
-  createContact(payload: any): Observable<any> {
-    return this.http.post<any>(this.baseUrl, payload);
+  getContactById(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
 
-  // ========================
-  // UPDATE CONTACT
-  // ========================
-  updateContact(id: string, payload: any): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/${id}`, payload);
+  createContact(data: any): Observable<any> {
+    return this.http.post(this.apiUrl, data);
   }
 
-  // ========================
-  // DELETE CONTACT
-  // ========================
+  updateContact(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, data);
+  }
+
   deleteContact(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.baseUrl}/${id}`);
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  toggleFavorite(id: string, isFavorite: boolean): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/favorite`, { isFavorite });
+  }
+
+  bulkDelete(ids: string[]): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/bulk`, {
+      body: { ids }
+    });
+  }
+
+  bulkUpdateFavorite(ids: string[], isFavorite: boolean): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/bulk/favorite`, {
+      ids,
+      isFavorite
+    });
   }
 }

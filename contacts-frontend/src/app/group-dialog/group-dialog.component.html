@@ -1,0 +1,101 @@
+<div class="dialog-container">
+
+  <!-- HEADER -->
+  <div class="dialog-header">
+    <div class="dialog-header-icon" [style.background]="selectedColor + '20'"
+         [style.border-color]="selectedColor + '40'">
+      <mat-icon [style.color]="selectedColor">{{ selectedIcon || 'label' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2>{{ isEditMode ? 'Edit Group' : 'Create New Group' }}</h2>
+      <p>{{ isEditMode ? 'Update group name, color or icon' : 'Organize your contacts into groups' }}</p>
+    </div>
+    <button class="dialog-close-btn" (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- BODY -->
+  <div class="dialog-body">
+
+    <!-- GROUP NAME -->
+    <div class="field-group">
+      <label class="field-label">Group Name <span class="required">*</span></label>
+      <div class="name-input-wrapper">
+        <span class="name-dot" [style.background]="selectedColor"></span>
+        <input
+          class="name-input"
+          [(ngModel)]="groupName"
+          placeholder="e.g. Work, Family, Friends..."
+          maxlength="50"
+          autofocus>
+        <span class="char-count">{{ groupName.length }}/50</span>
+      </div>
+    </div>
+
+    <!-- COLOR PICKER -->
+    <div class="field-group">
+      <label class="field-label">Color</label>
+      <div class="color-grid">
+        <button
+          *ngFor="let color of colors"
+          class="color-option"
+          [class.color-selected]="selectedColor === color.hex"
+          [style.background]="color.hex"
+          (click)="selectedColor = color.hex"
+          [title]="color.name">
+          <mat-icon *ngIf="selectedColor === color.hex">check</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- ICON PICKER -->
+    <div class="field-group">
+      <label class="field-label">Icon</label>
+      <div class="icon-grid">
+        <button
+          *ngFor="let icon of icons"
+          class="icon-option"
+          [class.icon-selected]="selectedIcon === icon"
+          [style.color]="selectedIcon === icon ? selectedColor : '#6b7280'"
+          [style.border-color]="selectedIcon === icon ? selectedColor : '#e5e7eb'"
+          [style.background]="selectedIcon === icon ? selectedColor + '15' : 'white'"
+          (click)="selectedIcon = icon">
+          <mat-icon>{{ icon }}</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="field-group">
+      <label class="field-label">Preview</label>
+      <div class="preview-card">
+        <div class="preview-group-item">
+          <span class="preview-dot" [style.background]="selectedColor"></span>
+          <mat-icon [style.color]="selectedColor">{{ selectedIcon || 'label' }}</mat-icon>
+          <span class="preview-name">{{ groupName || 'Group Name' }}</span>
+          <span class="preview-badge"
+                [style.background]="selectedColor + '25'"
+                [style.color]="selectedColor">0</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="dialog-footer">
+    <button class="btn-cancel" (click)="onCancel()">
+      Cancel
+    </button>
+    <button
+      class="btn-submit"
+      [style.background]="selectedColor"
+      (click)="onSubmit()"
+      [disabled]="!groupName.trim()">
+      <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+      {{ isEditMode ? 'Save Changes' : 'Create Group' }}
+    </button>
+  </div>
+
+</div>
