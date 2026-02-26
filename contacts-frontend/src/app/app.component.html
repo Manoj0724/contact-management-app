@@ -1,17 +1,14 @@
 <div class="app-layout" (click)="closeAllMenus()">
 
-  <!-- MOBILE HEADER - shows only on mobile -->
+  <!-- MOBILE HEADER -->
   <div class="mobile-header">
     <button class="mobile-menu-btn" (click)="toggleSidebar(); $event.stopPropagation()">
-      <mat-icon>{{ sidebarOpen ? 'close' : 'menu' }}</mat-icon>
+      <mat-icon>menu</mat-icon>
     </button>
     <span class="mobile-header-title">ContactsPro</span>
-    <span class="nav-badge" style="background:#2563eb; color:white; margin-left:auto;">
-      {{ totalContactsCount }}
-    </span>
   </div>
 
-  <!-- OVERLAY - darkens background when sidebar open on mobile -->
+  <!-- SIDEBAR OVERLAY (mobile) -->
   <div
     class="sidebar-overlay"
     [class.visible]="sidebarOpen"
@@ -31,7 +28,6 @@
     </div>
 
     <nav class="sidebar-nav">
-      <!-- ALL CONTACTS -->
       <a
         routerLink="/contacts"
         routerLinkActive="active"
@@ -44,19 +40,16 @@
         <span class="nav-badge">{{ totalContactsCount }}</span>
       </a>
 
-      <!-- ADD CONTACT -->
       <a routerLink="/contacts/new" routerLinkActive="active" class="menu-item" (click)="closeSidebar()">
         <mat-icon>person_add</mat-icon>
         <span>Add Contact</span>
       </a>
 
-      <!-- BULK UPLOAD -->
       <a routerLink="/contacts/bulk-upload" routerLinkActive="active" class="menu-item" (click)="closeSidebar()">
         <mat-icon>upload_file</mat-icon>
         <span>Bulk Upload</span>
       </a>
 
-      <!-- FAVORITES -->
       <button
         class="menu-item menu-btn"
         (click)="toggleFavorites()"
@@ -68,7 +61,6 @@
 
       <div class="sidebar-divider"></div>
 
-      <!-- GROUPS HEADER -->
       <div class="groups-header-row">
         <span class="groups-label">GROUPS</span>
         <button class="add-group-btn" (click)="openCreateGroupDialog(); $event.stopPropagation()" title="Create new group">
@@ -76,13 +68,11 @@
         </button>
       </div>
 
-      <!-- EMPTY GROUPS -->
       <div *ngIf="groups.length === 0" class="empty-groups">
         <mat-icon>folder_open</mat-icon>
         <span>No groups yet</span>
       </div>
 
-      <!-- GROUP LIST -->
       <div *ngFor="let group of groups" class="group-row">
         <a
           class="menu-item group-item"
@@ -117,7 +107,6 @@
 
       <div class="sidebar-divider"></div>
 
-      <!-- EXPORT CSV -->
       <button class="menu-item menu-btn" (click)="exportCSV()">
         <mat-icon>download</mat-icon>
         <span>Export CSV</span>
