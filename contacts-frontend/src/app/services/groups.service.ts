@@ -6,7 +6,11 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class GroupsService {
-  private apiUrl = `${window.location.protocol}//${window.location.hostname.includes('localhost') ? 'localhost:5000' : 'contact-management-app-1-qyg8.onrender.com'}/api/groups`;
+  private baseUrl = window.location.hostname.includes('localhost')
+    ? 'http://localhost:5000'
+    : 'https://contact-management-app-1-qyg8.onrender.com';
+
+  private apiUrl = `${this.baseUrl}/api/groups`;
 
   constructor(private http: HttpClient) {}
 

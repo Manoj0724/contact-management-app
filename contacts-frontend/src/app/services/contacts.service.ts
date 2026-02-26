@@ -6,39 +6,44 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ContactsService {
-  private apiUrl = `${window.location.protocol}//${window.location.hostname.includes('localhost') ? 'localhost:5000' : 'contact-management-app-1-qyg8.onrender.com'}/api/contacts`;
+  private baseUrl = window.location.hostname.includes('localhost')
+    ? 'http://localhost:5000'
+    : 'https://contact-management-app-1-qyg8.onrender.com';
+
+  private apiUrl = `${this.baseUrl}/api/contacts`;
 
   constructor(private http: HttpClient) {}
 
   getContacts(
-  page: number = 1,
-  limit: number = 10,
-  search: string = '',
-  sortBy: string = 'firstName',
-  sortOrder: string = 'asc',
-  favoritesOnly: boolean = false,
-  group: string = ''  // ← ADD THIS
-): Observable<any> {
-  let params = new HttpParams()
-    .set('page', page.toString())
-    .set('limit', limit.toString())
-    .set('sortBy', sortBy)
-    .set('sortOrder', sortOrder);
+    page: number = 1,
+    limit: number = 10,
+    search: string = '',
+    sortBy: string = 'firstName',
+    sortOrder: string = 'asc',
+    favoritesOnly: boolean = false,
+    group: string = ''
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('sortBy', sortBy)
+      .set('sortOrder', sortOrder);
 
-  if (search) {
-    params = params.set('search', search);
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    if (favoritesOnly) {
+      params = params.set('favorites', 'true');
+    }
+
+    if (group) {
+      params = params.set('group', group);
+    }
+
+    return this.http.get(this.apiUrl, { params });
   }
 
-  if (favoritesOnly) {
-    params = params.set('favorites', 'true');
-  }
-
-  if (group) {                           // ← ADD THIS
-    params = params.set('group', group); // ← ADD THIS
-  }                                      // ← ADD THIS
-
-  return this.http.get(this.apiUrl, { params });
-}
   getContactById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${id}`);
   }
