@@ -1,7 +1,7 @@
 {
   "/api": {
-    "target": "http://backend:5000",
-    "secure": false,
+    "target": "https://contact-backend-xxxx.onrender.com",
+    "secure": true,
     "changeOrigin": true
   }
 }
