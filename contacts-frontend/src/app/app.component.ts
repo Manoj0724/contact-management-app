@@ -40,7 +40,15 @@ export class AppComponent implements OnInit {
     private snackBar: MatSnackBar,
     private router: Router
   ) {}
+  sidebarOpen = false;
 
+toggleSidebar() {
+  this.sidebarOpen = !this.sidebarOpen;
+}
+
+closeSidebar() {
+  this.sidebarOpen = false;
+}
   ngOnInit(): void {
     this.loadContactsCount();
     this.loadGroups();
