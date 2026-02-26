@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ContactsService {
-  private apiUrl = '/api/contacts';
+  private apiUrl = `${window.location.protocol}//${window.location.hostname.includes('localhost') ? 'localhost:5000' : 'contact-management-app-1-qyg8.onrender.com'}/api/contacts`;
 
   constructor(private http: HttpClient) {}
 
