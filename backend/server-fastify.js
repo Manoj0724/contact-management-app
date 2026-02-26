@@ -19,7 +19,7 @@ const cors = require('@fastify/cors');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb://localhost:27017/contactsdb');
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/contactsdb');
     console.log('✅ MongoDB Connected');
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error);
@@ -33,7 +33,7 @@ const connectDB = async () => {
 
 // CORS - Allow frontend to access API
 fastify.register(cors, {
-  origin: 'http://localhost:4200',
+  origin: ['http://localhost:4200', 'http://frontend:4200'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 });
@@ -52,11 +52,12 @@ fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, bo
 // ROUTES
 // ==========================================
 
-// Import routes (we'll create these files)
 const contactRoutes = require('./contacts-routes'); 
-
-// Register routes with prefix
 fastify.register(contactRoutes, { prefix: '/api/contacts' });
+
+const bulkUploadRoutes = require('./bulk-upload-routes');
+fastify.register(bulkUploadRoutes, { prefix: '/api/contacts' });
+
 const groupRoutes = require('./groups-routes');
 fastify.register(groupRoutes, { prefix: '/api/groups' });
 

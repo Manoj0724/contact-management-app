@@ -27,7 +27,10 @@
         <mat-icon>person_add</mat-icon>
         <span>Add Contact</span>
       </a>
-
+      <a routerLink="/contacts/bulk-upload" routerLinkActive="active" class="menu-item">
+        <mat-icon>upload_file</mat-icon>
+        <span>Bulk Upload</span>
+      </a>
       <button
         class="menu-item menu-btn"
         (click)="toggleFavorites()"

@@ -1,3 +1,19 @@
+## [1.3.0] - 2026-02-XX
+
+### Added
+- Bulk delete contacts
+- Bulk export contacts
+- Add contacts to groups
+- Group management (Family, Work, Friends, etc.)
+
+### Changed
+- Migrated backend API from Express to Fastify
+- Improved API performance and structure
+
+### Backend
+- Fastify routes implemented
+- Bulk operation endpoints added
+
 ## [1.2.0] - 2026-02-XX
 
 ### Changed

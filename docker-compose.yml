@@ -1,0 +1,49 @@
+
+services:
+
+  mongodb:
+    image: mongo:6
+    container_name: contacts_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: contactsdb
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contacts_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/contactsdb
+      - PORT=5000
+      - NODE_ENV=development
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./contacts-frontend
+      dockerfile: Dockerfile
+    container_name: contacts_frontend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+    volumes:
+      - ./contacts-frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+    driver: local
