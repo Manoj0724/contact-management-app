@@ -13,7 +13,7 @@ import { GroupDialogComponent } from './group-dialog/group-dialog.component';
 @Component({
   selector: 'app-root',
   standalone: true,
- imports: [
+  imports: [
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -32,6 +32,11 @@ export class AppComponent implements OnInit {
   totalContactsCount = 0;
   groups: any[] = [];
   activeGroupMenu: string | null = null;
+  sidebarOpen = false;
+
+  private baseUrl = window.location.hostname.includes('localhost')
+    ? 'http://localhost:5000'
+    : 'https://contact-management-app-1-qyg8.onrender.com';
 
   constructor(
     private http: HttpClient,
@@ -40,15 +45,7 @@ export class AppComponent implements OnInit {
     private snackBar: MatSnackBar,
     private router: Router
   ) {}
-  sidebarOpen = false;
 
-toggleSidebar() {
-  this.sidebarOpen = !this.sidebarOpen;
-}
-
-closeSidebar() {
-  this.sidebarOpen = false;
-}
   ngOnInit(): void {
     this.loadContactsCount();
     this.loadGroups();
@@ -61,6 +58,18 @@ closeSidebar() {
       this.loadContactsCount();
       this.loadGroups();
     });
+  }
+
+  // ==========================================
+  // SIDEBAR
+  // ==========================================
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen = false;
   }
 
   // ==========================================
@@ -82,6 +91,7 @@ closeSidebar() {
   openCreateGroupDialog(): void {
     const dialogRef = this.dialog.open(GroupDialogComponent, {
       width: '500px',
+      maxWidth: '95vw',
       disableClose: true,
       data: null
     });
@@ -89,19 +99,18 @@ closeSidebar() {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.groupsService.createGroup(result).subscribe({
-        next: (res) => {
-  // ✅ Add instantly to array - no API reload
-  const newGroup = {
-    _id: res.group._id,
-    name: res.group.name,
-    color: res.group.color,
-    icon: res.group.icon,
-    contactCount: 0
-  };
-  this.groups = [...this.groups, newGroup]
-    .sort((a, b) => a.name.localeCompare(b.name));
-  this.showToast('✅ Group created!', 'success');
-},
+          next: (res) => {
+            const newGroup = {
+              _id: res.group._id,
+              name: res.group.name,
+              color: res.group.color,
+              icon: res.group.icon,
+              contactCount: 0
+            };
+            this.groups = [...this.groups, newGroup]
+              .sort((a, b) => a.name.localeCompare(b.name));
+            this.showToast('✅ Group created!', 'success');
+          },
           error: (err) => {
             const message = err.error?.message || 'Failed to create group';
             this.showToast(`❌ ${message}`, 'error');
@@ -117,6 +126,7 @@ closeSidebar() {
 
     const dialogRef = this.dialog.open(GroupDialogComponent, {
       width: '500px',
+      maxWidth: '95vw',
       disableClose: true,
       data: { group }
     });
@@ -124,15 +134,14 @@ closeSidebar() {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.groupsService.updateGroup(group._id, result).subscribe({
-          next: (res) => {
-  this.showToast('✅ Group updated!', 'success');
-  // ✅ INSTANT: Update in UI immediately
-  this.groups = this.groups.map(g =>
-    g._id === group._id
-      ? { ...g, name: result.name, color: result.color, icon: result.icon }
-      : g
-  );
-},
+          next: () => {
+            this.showToast('✅ Group updated!', 'success');
+            this.groups = this.groups.map(g =>
+              g._id === group._id
+                ? { ...g, name: result.name, color: result.color, icon: result.icon }
+                : g
+            );
+          },
           error: (err) => {
             const message = err.error?.message || 'Failed to update group';
             this.showToast(`❌ ${message}`, 'error');
@@ -142,34 +151,31 @@ closeSidebar() {
     });
   }
 
- deleteGroup(group: any, event: Event): void {
-  event.stopPropagation();
-  this.activeGroupMenu = null;
+  deleteGroup(group: any, event: Event): void {
+    event.stopPropagation();
+    this.activeGroupMenu = null;
 
-  const confirmed = window.confirm(
-    `Delete "${group.name}" group?\n\nContacts will NOT be deleted, just untagged.`
-  );
+    const confirmed = window.confirm(
+      `Delete "${group.name}" group?\n\nContacts will NOT be deleted, just untagged.`
+    );
 
-  if (!confirmed) return;
+    if (!confirmed) return;
 
-  // ✅ INSTANT: Remove from UI immediately
-  this.groups = this.groups.filter(g => g._id !== group._id);
+    this.groups = this.groups.filter(g => g._id !== group._id);
 
-  this.groupsService.deleteGroup(group._id).subscribe({
-    next: () => {
-      this.showToast(`✅ "${group.name}" deleted!`, 'success');
-      // Navigate away if currently filtered by deleted group
-      if (this.router.url.includes(group._id)) {
-        this.router.navigate(['/contacts']);
+    this.groupsService.deleteGroup(group._id).subscribe({
+      next: () => {
+        this.showToast(`✅ "${group.name}" deleted!`, 'success');
+        if (this.router.url.includes(group._id)) {
+          this.router.navigate(['/contacts']);
+        }
+      },
+      error: () => {
+        this.showToast('❌ Failed to delete group', 'error');
+        this.loadGroups();
       }
-    },
-    error: () => {
-      // ✅ Restore group if delete failed
-      this.showToast('❌ Failed to delete group', 'error');
-      this.loadGroups();
-    }
-  });
-}
+    });
+  }
 
   filterByGroup(groupId: string, groupName: string): void {
     this.activeGroupMenu = null;
@@ -185,6 +191,7 @@ closeSidebar() {
 
   closeAllMenus(): void {
     this.activeGroupMenu = null;
+    this.sidebarOpen = false;
   }
 
   // ==========================================
@@ -192,7 +199,7 @@ closeSidebar() {
   // ==========================================
 
   loadContactsCount(): void {
-    this.http.get<any>('http://localhost:5000/api/contacts?page=1&limit=1')
+    this.http.get<any>(`${this.baseUrl}/api/contacts?page=1&limit=1`)
       .subscribe({
         next: (res) => {
           this.totalContactsCount = res.totalContacts || 0;
@@ -253,8 +260,8 @@ closeSidebar() {
       panelClass: type === 'success' ? ['toast-success'] : ['toast-error']
     });
   }
+
   clearGroupFilter(): void {
-  // Navigate to contacts with NO query params - clears group filter
-  this.router.navigate(['/contacts']);
-}
+    this.router.navigate(['/contacts']);
+  }
 }
