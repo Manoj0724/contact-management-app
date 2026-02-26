@@ -55,20 +55,24 @@
           },
           "defaultConfiguration": "production"
         },
-        "serve": {
-          "builder": "@angular/build:dev-server",
-          "configurations": {
-            "production": {
-              "buildTarget": "contacts-frontend:build:production"
-            },
-           "development": {
-  "buildTarget": "contacts-frontend:build:development",
-  "proxyConfig": "proxy.conf.json"
-}
-
-          },
-          "defaultConfiguration": "development"
-        },
+       "serve": {
+  "builder": "@angular/build:dev-server",
+  "options": {
+    "allowedHosts": [
+      "contact-management-app-2-gnmv.onrender.com"
+    ]
+  },
+  "configurations": {
+    "production": {
+      "buildTarget": "contacts-frontend:build:production"
+    },
+    "development": {
+      "buildTarget": "contacts-frontend:build:development",
+      "proxyConfig": "proxy.conf.json"
+    }
+  },
+  "defaultConfiguration": "development"
+},
         "test": {
           "builder": "@angular/build:unit-test"
         }
