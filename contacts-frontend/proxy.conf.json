@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://contact-backend-xxxx.onrender.com",
+    "target": "https://contact-management-app-1-qyg8.onrender.com",
     "secure": true,
     "changeOrigin": true
   }
