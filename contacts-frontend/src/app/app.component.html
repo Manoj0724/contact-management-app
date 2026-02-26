@@ -1,22 +1,5 @@
 <div class="app-layout" (click)="closeAllMenus()">
-
-  <!-- MOBILE HEADER -->
-  <div class="mobile-header">
-    <button class="mobile-menu-btn" (click)="toggleSidebar(); $event.stopPropagation()">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <span class="mobile-header-title">ContactsPro</span>
-  </div>
-
-  <!-- SIDEBAR OVERLAY (mobile) -->
-  <div
-    class="sidebar-overlay"
-    [class.visible]="sidebarOpen"
-    (click)="closeSidebar()">
-  </div>
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar" [class.open]="sidebarOpen" (click)="$event.stopPropagation()">
+  <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">
         <mat-icon>contacts</mat-icon>
@@ -33,23 +16,21 @@
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: true }"
         class="menu-item"
-        (click)="clearGroupFilter(); closeSidebar()"
+        (click)="clearGroupFilter()"
       >
         <mat-icon>people</mat-icon>
         <span>All Contacts</span>
         <span class="nav-badge">{{ totalContactsCount }}</span>
       </a>
 
-      <a routerLink="/contacts/new" routerLinkActive="active" class="menu-item" (click)="closeSidebar()">
+      <a routerLink="/contacts/new" routerLinkActive="active" class="menu-item">
         <mat-icon>person_add</mat-icon>
         <span>Add Contact</span>
       </a>
-
-      <a routerLink="/contacts/bulk-upload" routerLinkActive="active" class="menu-item" (click)="closeSidebar()">
+      <a routerLink="/contacts/bulk-upload" routerLinkActive="active" class="menu-item">
         <mat-icon>upload_file</mat-icon>
         <span>Bulk Upload</span>
       </a>
-
       <button
         class="menu-item menu-btn"
         (click)="toggleFavorites()"
@@ -63,7 +44,7 @@
 
       <div class="groups-header-row">
         <span class="groups-label">GROUPS</span>
-        <button class="add-group-btn" (click)="openCreateGroupDialog(); $event.stopPropagation()" title="Create new group">
+        <button class="add-group-btn" (click)="openCreateGroupDialog()" title="Create new group">
           <mat-icon>add</mat-icon>
         </button>
       </div>
@@ -77,7 +58,7 @@
         <a
           class="menu-item group-item"
           [style.--group-color]="group.color"
-          (click)="filterByGroup(group._id, group.name); closeSidebar()"
+          (click)="filterByGroup(group._id, group.name)"
         >
           <span class="group-dot" [style.background]="group.color"></span>
           <span class="group-name">{{ group.name }}</span>
@@ -89,9 +70,11 @@
             {{ group.contactCount }}
           </span>
         </a>
+
         <button class="group-menu-btn" (click)="toggleGroupMenu(group._id, $event)" title="Options">
           <mat-icon>more_vert</mat-icon>
         </button>
+
         <div class="group-dropdown" *ngIf="activeGroupMenu === group._id">
           <button class="dropdown-item edit-item" (click)="openEditGroupDialog(group, $event)">
             <mat-icon>edit</mat-icon>
@@ -118,9 +101,7 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
   <main class="main-content">
     <router-outlet></router-outlet>
   </main>
-
 </div>
