@@ -228,7 +228,7 @@ html, body {
 .main-content {
   flex: 1;
   overflow-y: auto; overflow-x: hidden;
-  padding: 28px 32px;
+  padding: 20px 24px;
   min-width: 0;
 }
 
@@ -492,7 +492,7 @@ mat-form-field { width: 100%; }
    ================================================ */
 @media (min-width: 1400px) {
   :root { --sidebar-width: 280px; }
-  .main-content { padding: 32px 40px; }
+  .main-content { padding: 20px 28px; }
   .page-title h1 { font-size: 26px; }
   .form-body { padding: 32px; }
 }

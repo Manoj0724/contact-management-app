@@ -199,16 +199,21 @@ export class AppComponent implements OnInit {
   // ==========================================
 
   loadContactsCount(): void {
-    this.http.get<any>(`${this.baseUrl}/api/contacts?page=1&limit=1`)
-      .subscribe({
-        next: (res) => {
-          this.totalContactsCount = res.totalContacts || 0;
-        },
-        error: () => {
-          this.totalContactsCount = 0;
-        }
+  const url = window.location.hostname.includes('localhost')
+    ? 'http://localhost:5000/api/contacts?page=1&limit=1'
+    : 'https://contact-management-app-1-qyg8.onrender.com/api/contacts?page=1&limit=1';
+
+  this.http.get<any>(url).subscribe({
+    next: (res) => {
+      Promise.resolve().then(() => {
+        this.totalContactsCount = res.totalContacts || 0;
       });
-  }
+    },
+    error: () => {
+      this.totalContactsCount = 0;
+    }
+  });
+}
 
   // ==========================================
   // CSV EXPORT
