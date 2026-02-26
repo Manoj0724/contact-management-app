@@ -33,7 +33,11 @@ const connectDB = async () => {
 
 // CORS - Allow frontend to access API
 fastify.register(cors, {
-  origin: ['http://localhost:4200', 'http://frontend:4200'],
+  origin: [
+  'http://localhost:4200',
+  'http://frontend:4200',
+  'https://contact-management-app-2-gnmv.onrender.com'
+],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 });
