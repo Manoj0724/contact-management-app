@@ -324,9 +324,15 @@ mat-form-field { width: 100%; }
 .table-header h2 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary); }
 
 .total-count {
-  font-size: 12px; color: var(--text-secondary);
-  background: var(--bg); padding: 3px 10px;
-  border-radius: 20px; border: 1px solid var(--border);
+  font-size: 12px;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #bfdbfe;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mat-mdc-table { width: 100%; }
@@ -608,4 +614,62 @@ mat-form-field { width: 100%; }
 
 .mat-mdc-row.mat-mdc-row-selected .mat-mdc-cell {
   color: #111827 !important;
+}
+
+/* ================================================
+   BUG FIXES - Hover, Scrollbar, Badge
+   ================================================ */
+
+/* FIX 1: Blue hover row - make text visible */
+.mat-mdc-row:hover td,
+.mat-mdc-row:hover .mat-mdc-cell,
+.mat-mdc-row:hover strong,
+.mat-mdc-row:hover span,
+.mat-mdc-row:hover small {
+  color: #111827 !important;
+}
+
+.mat-mdc-row:hover {
+  background-color: #f0f4ff !important;
+}
+
+/* Override Angular Material default blue row hover */
+.mat-mdc-table .mat-mdc-row:hover .mat-mdc-cell {
+  background-color: transparent !important;
+}
+
+.mdc-data-table__row:hover .mdc-data-table__cell {
+  color: #111827 !important;
+}
+
+/* FIX 2: Remove bottom horizontal scrollbar everywhere */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+.app-layout {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+.main-content {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.contacts-table-card {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+/* FIX 3: Total count badge - don't cut off */
+.total-count {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.table-header {
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
 }
