@@ -1,54 +1,40 @@
 <!-- CONTACTS LIST PAGE -->
-<div class="page-header fade-in" style="margin-bottom: 16px">
+<div class="contacts-page">
+
+<div class="page-header fade-in">
   <div class="page-title">
-    <h1 style="margin-bottom: 4px; display: flex; align-items: center; gap: 12px;">
+    <h1>
       {{ filterGroupName || 'All Contacts' }}
       <button
         *ngIf="filterGroupName"
         mat-icon-button
         (click)="clearGroupFilter()"
-        matTooltip="Clear filter"
-        style="transform: scale(0.8);">
+        matTooltip="Clear filter">
         <mat-icon>close</mat-icon>
       </button>
     </h1>
-    <p style="margin: 0">
-      {{ filterGroupName ? 'Showing contacts in ' + filterGroupName : 'Manage and organize your contacts' }}
-    </p>
+    <p>{{ filterGroupName ? 'Showing contacts in ' + filterGroupName : 'Manage and organize your contacts' }}</p>
   </div>
 </div>
 
-<!-- SEARCH BAR (NO ACTION BUTTONS) -->
+<!-- SEARCH BAR -->
 <div class="search-bar fade-in">
   <mat-form-field appearance="outline" class="search-field">
-    <input
-      matInput
-      placeholder="Search contacts..."
-      [(ngModel)]="searchText"
-      (keyup.enter)="onSearchOrClear()"
-    />
-
+    <input matInput placeholder="Search contacts..." [(ngModel)]="searchText" (keyup.enter)="onSearchOrClear()" />
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
-
   <div class="action-buttons">
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="onSearchOrClear()"
-      class="btn-icon"
-      style="height: 56px"
-    >
+    <button mat-raised-button color="primary" (click)="onSearchOrClear()" class="btn-icon">
       <mat-icon>{{ isSearchActive ? 'close' : 'search' }}</mat-icon>
       {{ isSearchActive ? 'Clear' : 'Search' }}
     </button>
-
-    <button mat-stroked-button (click)="openAdvancedSearch()" class="btn-icon" style="height: 56px">
+    <button mat-stroked-button (click)="openAdvancedSearch()" class="btn-icon">
       <mat-icon>tune</mat-icon>
       Advanced
     </button>
   </div>
 </div>
+
 <!-- BULK ACTIONS TOOLBAR -->
 <div class="bulk-actions-bar" *ngIf="getSelectedCount() > 0">
   <div class="bulk-info">
@@ -58,46 +44,27 @@
       <span class="label">Selected</span>
     </div>
   </div>
-
   <div class="bulk-buttons">
-    <button
-      mat-raised-button
-      class="bulk-btn bulk-delete"
-      (click)="bulkDeleteContacts()"
-      [disabled]="bulkActionInProgress() || loading()">
+    <button mat-raised-button class="bulk-btn bulk-delete" (click)="bulkDeleteContacts()" [disabled]="bulkActionInProgress() || loading()">
       <mat-icon>delete</mat-icon>
       <span>Delete</span>
     </button>
-
-    <button
-      mat-raised-button
-      class="bulk-btn bulk-export"
-      (click)="bulkExportContacts()"
-      [disabled]="bulkActionInProgress() || loading()">
+    <button mat-raised-button class="bulk-btn bulk-export" (click)="bulkExportContacts()" [disabled]="bulkActionInProgress() || loading()">
       <mat-icon>file_download</mat-icon>
       <span>Export</span>
     </button>
-<!-- ASSIGN TO GROUP -->
-<div *ngIf="availableGroups && availableGroups.length > 0">
-  <select
-    class="bulk-group-select"
-    (change)="bulkAssignToGroup($event)"
-    [disabled]="bulkActionInProgress() || loading()">
-    <option value="">Add to Group</option>
-    <option *ngFor="let g of availableGroups" [value]="g._id">
-      {{ g.name }}
-    </option>
-  </select>
-</div>
-    <button
-      mat-icon-button
-      class="bulk-clear"
-      matTooltip="Clear selection"
-      (click)="clearSelection()">
+    <div *ngIf="availableGroups && availableGroups.length > 0">
+      <select class="bulk-group-select" (change)="bulkAssignToGroup($event)" [disabled]="bulkActionInProgress() || loading()">
+        <option value="">Add to Group</option>
+        <option *ngFor="let g of availableGroups" [value]="g._id">{{ g.name }}</option>
+      </select>
+    </div>
+    <button mat-icon-button class="bulk-clear" matTooltip="Clear selection" (click)="clearSelection()">
       <mat-icon>close</mat-icon>
     </button>
   </div>
 </div>
+
 <!-- CONTACTS TABLE CARD -->
 <div class="contacts-table-card fade-in">
   <div class="table-header">
@@ -106,9 +73,9 @@
   </div>
 
   <!-- LOADING STATE -->
-  <div *ngIf="loading()" style="padding: 40px; text-align: center">
-    <mat-spinner diameter="50" style="margin: 0 auto"></mat-spinner>
-    <p style="margin-top: 16px; color: var(--text-secondary)">Loading contacts...</p>
+  <div *ngIf="loading()" class="empty-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading contacts...</p>
   </div>
 
   <!-- ERROR STATE -->
@@ -117,8 +84,7 @@
     <h3>Failed to Load Contacts</h3>
     <p>{{ error }}</p>
     <button mat-raised-button color="primary" (click)="fetchContacts()">
-      <mat-icon>refresh</mat-icon>
-      Retry
+      <mat-icon>refresh</mat-icon> Retry
     </button>
   </div>
 
@@ -128,149 +94,96 @@
     <h3>No Contacts Found</h3>
     <p>Start by adding your first contact</p>
     <button mat-raised-button color="primary" routerLink="/contacts/new">
-      <mat-icon>person_add</mat-icon>
-      Add Contact
+      <mat-icon>person_add</mat-icon> Add Contact
     </button>
   </div>
 
-  <!-- CONTACTS TABLE -->
-  <table
-    mat-table
-    [dataSource]="contacts()"
-    *ngIf="!loading() && !error && contacts().length > 0"
-    class="mat-elevation-z0"
-  >
-    <!-- SELECT CHECKBOX COLUMN -->
-    <ng-container matColumnDef="select">
-      <th mat-header-cell *matHeaderCellDef>
-        <mat-checkbox
-          [checked]="selectAll"
-          (change)="toggleSelectAll()"
-          color="primary">
-        </mat-checkbox>
-      </th>
-      <td mat-cell *matCellDef="let contact">
-        <mat-checkbox
-          [checked]="isSelected(contact._id)"
-          (change)="toggleSelectContact(contact._id)"
-          (click)="$event.stopPropagation()"
-          color="primary">
-        </mat-checkbox>
-      </td>
-    </ng-container>
+  <!-- CONTACTS TABLE - scrollable on mobile -->
+  <div class="table-scroll-wrapper">
+    <table mat-table [dataSource]="contacts()" *ngIf="!loading() && !error && contacts().length > 0" class="mat-elevation-z0">
 
-    <!-- CONTACT COLUMN -->
-    <ng-container matColumnDef="contact">
-      <th mat-header-cell *matHeaderCellDef (click)="toggleSort()" style="cursor: pointer">
-        NAME
-        <mat-icon style="font-size: 16px; vertical-align: middle">
-          {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
-        </mat-icon>
-      </th>
-      <td mat-cell *matCellDef="let contact">
-        <div class="contact-name">
-          <span class="contact-avatar">
-            {{ contact.firstName?.charAt(0)?.toUpperCase() || 'A' }}
-          </span>
-          <div>
-            <strong>{{ contact.title }} {{ contact.firstName }} {{ contact.lastName }}</strong>
-            <br />
-            <small style="color: var(--text-secondary)">{{
-              contact.mobile2 || 'No alternate'
-            }}</small>
+      <!-- SELECT COLUMN -->
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef>
+          <mat-checkbox [checked]="selectAll" (change)="toggleSelectAll()" color="primary"></mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let contact">
+          <mat-checkbox [checked]="isSelected(contact._id)" (change)="toggleSelectContact(contact._id)" (click)="$event.stopPropagation()" color="primary"></mat-checkbox>
+        </td>
+      </ng-container>
+
+      <!-- NAME COLUMN -->
+      <ng-container matColumnDef="contact">
+        <th mat-header-cell *matHeaderCellDef (click)="toggleSort()" style="cursor:pointer">
+          NAME <mat-icon style="font-size:16px;vertical-align:middle">{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+        </th>
+        <td mat-cell *matCellDef="let contact">
+          <div class="contact-name">
+            <span class="contact-avatar">{{ contact.firstName?.charAt(0)?.toUpperCase() || 'A' }}</span>
+            <div>
+              <strong>{{ contact.title }} {{ contact.firstName }} {{ contact.lastName }}</strong>
+              <br />
+              <small class="text-muted">{{ contact.mobile2 || 'No alternate' }}</small>
+            </div>
           </div>
-        </div>
-      </td>
-    </ng-container>
+        </td>
+      </ng-container>
 
-    <!-- MOBILE COLUMN -->
-    <ng-container matColumnDef="mobile">
-      <th mat-header-cell *matHeaderCellDef>MOBILE</th>
-      <td mat-cell *matCellDef="let contact">
-        <mat-icon style="font-size: 16px; vertical-align: middle; margin-right: 6px; color: var(--primary)">
-          phone
-        </mat-icon>
-        {{ contact.mobile1 }}
-      </td>
-    </ng-container>
+      <!-- MOBILE COLUMN -->
+      <ng-container matColumnDef="mobile">
+        <th mat-header-cell *matHeaderCellDef>MOBILE</th>
+        <td mat-cell *matCellDef="let contact">
+          <mat-icon class="cell-icon primary-icon">phone</mat-icon>
+          {{ contact.mobile1 }}
+        </td>
+      </ng-container>
 
-    <!-- CITY COLUMN -->
-    <ng-container matColumnDef="city">
-      <th mat-header-cell *matHeaderCellDef>LOCATION</th>
-      <td mat-cell *matCellDef="let contact">
-        <mat-icon style="font-size: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent)">
-          location_on
-        </mat-icon>
-        {{ contact.address?.city }}, {{ contact.address?.state }}
-      </td>
-    </ng-container>
+      <!-- CITY COLUMN -->
+      <ng-container matColumnDef="city">
+        <th mat-header-cell *matHeaderCellDef>LOCATION</th>
+        <td mat-cell *matCellDef="let contact">
+          <mat-icon class="cell-icon accent-icon">location_on</mat-icon>
+          {{ contact.address?.city }}, {{ contact.address?.state }}
+        </td>
+      </ng-container>
 
-    <!-- ACTIONS COLUMN -->
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
-      <td mat-cell *matCellDef="let contact">
-        <button
-          mat-icon-button
-          [attr.aria-label]="'Toggle favorite'"
-          (click)="toggleFavorite(contact._id, contact.isFavorite)"
-          [matTooltip]="contact.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
-        >
-          <mat-icon [style.color]="contact.isFavorite ? '#ffc107' : '#9e9e9e'">
-            {{ contact.isFavorite ? 'star' : 'star_outline' }}
-          </mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          color="primary"
-          [routerLink]="['/contacts/edit', contact._id]"
-          matTooltip="Edit Contact"
-        >
-          <mat-icon>edit</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          color="warn"
-          (click)="onDelete(contact._id, contact.firstName + ' ' + contact.lastName)"
-          matTooltip="Delete Contact"
-        >
-          <mat-icon>delete</mat-icon>
-        </button>
-      </td>
-    </ng-container>
+      <!-- ACTIONS COLUMN -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+        <td mat-cell *matCellDef="let contact">
+          <button mat-icon-button (click)="toggleFavorite(contact._id, contact.isFavorite)" [matTooltip]="contact.isFavorite ? 'Remove favorite' : 'Add favorite'">
+            <mat-icon [style.color]="contact.isFavorite ? '#ffc107' : '#9e9e9e'">{{ contact.isFavorite ? 'star' : 'star_outline' }}</mat-icon>
+          </button>
+          <button mat-icon-button color="primary" [routerLink]="['/contacts/edit', contact._id]" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="onDelete(contact._id, contact.firstName + ' ' + contact.lastName)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-  </table>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
 
   <!-- PAGINATION -->
   <div class="pagination-bar" *ngIf="!loading() && contacts().length > 0">
-    <div style="display: flex; align-items: center; gap: 12px">
-      <span style="font-size: 13px; color: var(--text-secondary)">Rows:</span>
-      <mat-form-field appearance="outline" style="width: 80px">
+    <div class="page-size-selector">
+      <span class="rows-label">Rows:</span>
+      <mat-form-field appearance="outline" style="width:80px">
         <mat-select [(ngModel)]="limit" (selectionChange)="onPageSizeChange()">
-          <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-            {{ size }}
-          </mat-option>
+          <mat-option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
-
     <div class="page-info">Page {{ page }} of {{ totalPages }}</div>
-
     <div class="page-controls">
       <button mat-icon-button (click)="prevPage()" [disabled]="page === 1">
         <mat-icon>chevron_left</mat-icon>
       </button>
-
-      <button
-        mat-button
-        *ngFor="let p of getPageNumbers()"
-        (click)="goToPage(p)"
-        [class.active]="p === page"
-      >
-        {{ p }}
-      </button>
-
+      <button mat-button *ngFor="let p of getPageNumbers()" (click)="goToPage(p)" [class.active]="p === page">{{ p }}</button>
       <button mat-icon-button (click)="nextPage()" [disabled]="page === totalPages">
         <mat-icon>chevron_right</mat-icon>
       </button>
@@ -279,82 +192,40 @@
 </div>
 
 <!-- ADVANCED SEARCH MODAL -->
-<div
-  *ngIf="showAdvancedSearch"
-  class="dialog-backdrop"
-  style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  "
-  (click)="closeAdvancedSearch()"
->
-  <div
-    class="adv-search-container"
-    style="
-      background: white;
-      border-radius: 12px;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    "
-    (click)="$event.stopPropagation()"
-  >
-    <div
-      style="
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        padding: 24px;
-        border-radius: 12px 12px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      "
-    >
-      <h2 style="color: white; margin: 0; font-size: 20px">Advanced Search</h2>
-      <button mat-icon-button (click)="closeAdvancedSearch()" style="color: white">
-        <mat-icon>close</mat-icon>
-      </button>
+<div *ngIf="showAdvancedSearch" class="adv-backdrop" (click)="closeAdvancedSearch()">
+  <div class="adv-search-container" (click)="$event.stopPropagation()">
+    <div class="adv-search-header">
+      <h2>Advanced Search</h2>
+      <button mat-icon-button (click)="closeAdvancedSearch()"><mat-icon>close</mat-icon></button>
     </div>
-
-    <div style="padding: 24px">
+    <div class="adv-search-body">
       <div class="row">
         <div class="col-md-6 mb-3">
-          <mat-form-field appearance="outline" style="width: 100%">
+          <mat-form-field appearance="outline" style="width:100%">
             <mat-label>First Name</mat-label>
             <input matInput [(ngModel)]="advancedSearch.firstName" />
             <mat-icon matPrefix>person</mat-icon>
             <mat-error *ngIf="advancedErrors.firstName">Only letters allowed</mat-error>
           </mat-form-field>
         </div>
-
         <div class="col-md-6 mb-3">
-          <mat-form-field appearance="outline" style="width: 100%">
+          <mat-form-field appearance="outline" style="width:100%">
             <mat-label>Last Name</mat-label>
             <input matInput [(ngModel)]="advancedSearch.lastName" />
             <mat-icon matPrefix>person</mat-icon>
             <mat-error *ngIf="advancedErrors.lastName">Only letters allowed</mat-error>
           </mat-form-field>
         </div>
-
         <div class="col-md-6 mb-3">
-          <mat-form-field appearance="outline" style="width: 100%">
+          <mat-form-field appearance="outline" style="width:100%">
             <mat-label>Mobile</mat-label>
             <input matInput [(ngModel)]="advancedSearch.mobile" maxlength="10" />
             <mat-icon matPrefix>phone</mat-icon>
             <mat-error *ngIf="advancedErrors.mobile">Must be 10 digits</mat-error>
           </mat-form-field>
         </div>
-
         <div class="col-md-6 mb-3">
-          <mat-form-field appearance="outline" style="width: 100%">
+          <mat-form-field appearance="outline" style="width:100%">
             <mat-label>City</mat-label>
             <input matInput [(ngModel)]="advancedSearch.city" />
             <mat-icon matPrefix>location_city</mat-icon>
@@ -363,22 +234,13 @@
         </div>
       </div>
     </div>
-
-    <div
-      class="adv-search-footer"
-      style="
-        padding: 20px 24px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-      "
-    >
+    <div class="adv-search-footer">
       <button mat-stroked-button (click)="closeAdvancedSearch()">Cancel</button>
       <button mat-raised-button color="primary" (click)="applyAdvancedSearch()">
-        <mat-icon>search</mat-icon>
-        Search
+        <mat-icon>search</mat-icon> Search
       </button>
     </div>
   </div>
 </div>
+
+</div><!-- end contacts-page -->

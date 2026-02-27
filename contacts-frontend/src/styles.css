@@ -583,3 +583,22 @@ mat-form-field { width: 100%; }
   .form-footer button { width: 100% !important; }
   .page-title h1 { font-size: 16px !important; }
 }
+
+/* ===== CRITICAL MOBILE FIX ===== */
+@media (max-width: 767px) {
+  /* Force full width on everything */
+  router-outlet + * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .contacts-page,
+  app-contacts,
+  app-new-contact,
+  app-bulk-upload {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}

@@ -39,6 +39,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatCheckboxModule
   ],
   templateUrl: './contacts.component.html',
+styleUrls: ['./contacts.component.css'],
 })
 export class ContactsComponent implements OnInit {
 
