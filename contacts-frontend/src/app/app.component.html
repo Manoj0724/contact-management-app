@@ -1,13 +1,5 @@
 <div class="app-layout" (click)="closeAllMenus()">
 
-  <!-- MOBILE HEADER -->
-  <div class="mobile-header">
-    <button class="mobile-menu-btn" (click)="toggleSidebar(); $event.stopPropagation()">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <span class="mobile-header-title">ContactsPro</span>
-  </div>
-
   <!-- SIDEBAR OVERLAY (mobile) -->
   <div
     class="sidebar-overlay"
@@ -118,9 +110,22 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
-    <router-outlet></router-outlet>
-  </main>
+  <!-- RIGHT SIDE WRAPPER -->
+  <div class="content-wrapper">
+
+    <!-- MOBILE HEADER - only shows on mobile -->
+    <div class="mobile-header">
+      <button class="mobile-menu-btn" (click)="toggleSidebar(); $event.stopPropagation()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="mobile-header-title">ContactsPro</span>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
 
 </div>
