@@ -492,7 +492,7 @@ mat-form-field { width: 100%; }
    MOBILE below 768px — KEY FIX
    Sidebar has width:0 so content takes full screen
    ================================================ */
-@media (max-width: 767px) {
+@media (min-width: 1025px) {
 
   /* Show mobile top bar */
   .mobile-header { display: flex !important; }
