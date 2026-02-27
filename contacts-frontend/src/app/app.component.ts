@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,7 +34,7 @@ export class AppComponent implements OnInit {
   activeGroupMenu: string | null = null;
   sidebarOpen = false;
 
-  private baseUrl = window.location.hostname.includes('localhost')
+  private readonly apiBase = window.location.hostname.includes('localhost')
     ? 'http://localhost:5000'
     : 'https://contact-management-app-1-qyg8.onrender.com';
 
@@ -43,8 +43,17 @@ export class AppComponent implements OnInit {
     private groupsService: GroupsService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
+
+  toggleSidebar() {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar() {
+    this.sidebarOpen = false;
+  }
 
   ngOnInit(): void {
     this.loadContactsCount();
@@ -58,18 +67,6 @@ export class AppComponent implements OnInit {
       this.loadContactsCount();
       this.loadGroups();
     });
-  }
-
-  // ==========================================
-  // SIDEBAR
-  // ==========================================
-
-  toggleSidebar(): void {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
-
-  closeSidebar(): void {
-    this.sidebarOpen = false;
   }
 
   // ==========================================
@@ -91,7 +88,6 @@ export class AppComponent implements OnInit {
   openCreateGroupDialog(): void {
     const dialogRef = this.dialog.open(GroupDialogComponent, {
       width: '500px',
-      maxWidth: '95vw',
       disableClose: true,
       data: null
     });
@@ -126,7 +122,6 @@ export class AppComponent implements OnInit {
 
     const dialogRef = this.dialog.open(GroupDialogComponent, {
       width: '500px',
-      maxWidth: '95vw',
       disableClose: true,
       data: { group }
     });
@@ -191,7 +186,6 @@ export class AppComponent implements OnInit {
 
   closeAllMenus(): void {
     this.activeGroupMenu = null;
-    this.sidebarOpen = false;
   }
 
   // ==========================================
@@ -199,21 +193,20 @@ export class AppComponent implements OnInit {
   // ==========================================
 
   loadContactsCount(): void {
-  const url = window.location.hostname.includes('localhost')
-    ? 'http://localhost:5000/api/contacts?page=1&limit=1'
-    : 'https://contact-management-app-1-qyg8.onrender.com/api/contacts?page=1&limit=1';
-
-  this.http.get<any>(url).subscribe({
-    next: (res) => {
-      Promise.resolve().then(() => {
-        this.totalContactsCount = res.totalContacts || 0;
+    this.http.get<any>(`${this.apiBase}/api/contacts?page=1&limit=1`)
+      .subscribe({
+        next: (res) => {
+          // FIX: Use Promise.resolve to avoid ExpressionChangedAfterChecked error
+          Promise.resolve().then(() => {
+            this.totalContactsCount = res.totalContacts || 0;
+            this.cdr.detectChanges();
+          });
+        },
+        error: () => {
+          this.totalContactsCount = 0;
+        }
       });
-    },
-    error: () => {
-      this.totalContactsCount = 0;
-    }
-  });
-}
+  }
 
   // ==========================================
   // CSV EXPORT

@@ -570,3 +570,42 @@ mat-form-field { width: 100%; }
   .page-controls button { min-width: 28px !important; padding: 0 2px !important; font-size: 12px; }
   .selection-badge { padding: 6px 10px; }
 }
+
+/* ===== FIX 1: Remove sidebar horizontal scrollbar ===== */
+.sidebar {
+  overflow-x: hidden !important;
+}
+
+.app-layout {
+  overflow-x: hidden !important;
+}
+
+/* ===== FIX 2: Fix table row hover - text must stay visible ===== */
+.mat-mdc-row:hover {
+  background-color: #e8f0fe !important;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  color: #111827 !important;
+}
+
+.mat-mdc-row:hover strong {
+  color: #111827 !important;
+}
+
+.mat-mdc-row:hover small {
+  color: #6b7280 !important;
+}
+
+.mat-mdc-row:hover .contact-avatar {
+  background: linear-gradient(135deg, #1d4ed8, #0284c7) !important;
+}
+
+/* Fix selected/active row text visibility */
+.mat-mdc-row.mat-mdc-row-selected {
+  background-color: #dbeafe !important;
+}
+
+.mat-mdc-row.mat-mdc-row-selected .mat-mdc-cell {
+  color: #111827 !important;
+}
