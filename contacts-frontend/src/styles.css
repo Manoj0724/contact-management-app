@@ -588,7 +588,7 @@ mat-form-field { width: 100%; }
 
 /* ===== FIX 2: Fix table row hover - text must stay visible ===== */
 .mat-mdc-row:hover {
-  background-color: #e8f0fe !important;
+  background-color: #f1f5f9 !important;
 }
 
 .mat-mdc-row:hover .mat-mdc-cell {
@@ -630,7 +630,7 @@ mat-form-field { width: 100%; }
 }
 
 .mat-mdc-row:hover {
-  background-color: #f0f4ff !important;
+  background-color: #f1f5f9 !important;
 }
 
 /* Override Angular Material default blue row hover */
@@ -664,10 +664,7 @@ html, body {
 }
 
 /* FIX 3: Total count badge - don't cut off */
-.total-count {
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-}
+
 
 .table-header {
   flex-wrap: nowrap !important;
