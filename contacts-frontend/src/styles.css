@@ -586,7 +586,7 @@ mat-form-field { width: 100%; }
 }
 
 /* ===== CRITICAL MOBILE FIX ===== */
-@media (max-width: 767px) {
+@media (max-width: 1025px) {
   /* Force full width on everything */
   router-outlet + * {
     width: 100% !important;
