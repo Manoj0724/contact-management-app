@@ -5,6 +5,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
+  font-size: 16px;
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
   --accent: #0ea5e9;
