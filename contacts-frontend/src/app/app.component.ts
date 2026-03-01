@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,6 +9,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpClient } from '@angular/common/http';
 import { GroupsService } from './services/groups.service';
 import { GroupDialogComponent } from './group-dialog/group-dialog.component';
+import { ConfirmDialogComponent } from './contacts/contact-dialog/contact-dialog.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -26,7 +28,7 @@ import { GroupDialogComponent } from './group-dialog/group-dialog.component';
   ],
   templateUrl: './app.component.html'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'ContactsPro';
   showOnlyFavorites = false;
   totalContactsCount = 0;
@@ -34,9 +36,15 @@ export class AppComponent implements OnInit {
   activeGroupMenu: string | null = null;
   sidebarOpen = false;
 
-  private readonly apiBase = window.location.hostname.includes('localhost')
-    ? 'http://localhost:5000'
-    : 'https://contact-management-app-1-qyg8.onrender.com';
+  // ✅ FIX: Store handler references so we can properly remove them
+  private contactsUpdatedHandler = () => {
+    this.loadContactsCount();
+    this.loadGroups();
+  };
+
+  private exportCSVHandler = () => {
+    this.exportCSV();
+  };
 
   constructor(
     private http: HttpClient,
@@ -47,11 +55,11 @@ export class AppComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
-  toggleSidebar() {
+  toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
-  closeSidebar() {
+  closeSidebar(): void {
     this.sidebarOpen = false;
   }
 
@@ -59,14 +67,15 @@ export class AppComponent implements OnInit {
     this.loadContactsCount();
     this.loadGroups();
 
-    window.addEventListener('export-csv', () => {
-      this.exportCSV();
-    });
+    // ✅ FIX: Use stored references for proper cleanup
+    window.addEventListener('export-csv', this.exportCSVHandler);
+    window.addEventListener('contacts-updated', this.contactsUpdatedHandler);
+  }
 
-    window.addEventListener('contacts-updated', () => {
-      this.loadContactsCount();
-      this.loadGroups();
-    });
+  // ✅ FIX: Proper cleanup using stored references
+  ngOnDestroy(): void {
+    window.removeEventListener('export-csv', this.exportCSVHandler);
+    window.removeEventListener('contacts-updated', this.contactsUpdatedHandler);
   }
 
   // ==========================================
@@ -77,10 +86,9 @@ export class AppComponent implements OnInit {
     this.groupsService.getGroups().subscribe({
       next: (res) => {
         this.groups = res.groups;
-        console.log('✅ Groups loaded:', this.groups);
       },
       error: (err) => {
-        console.error('❌ Failed to load groups:', err);
+        console.error('Failed to load groups:', err);
       }
     });
   }
@@ -105,11 +113,11 @@ export class AppComponent implements OnInit {
             };
             this.groups = [...this.groups, newGroup]
               .sort((a, b) => a.name.localeCompare(b.name));
-            this.showToast('✅ Group created!', 'success');
+            this.showToast('Group created!', 'success');
           },
           error: (err) => {
             const message = err.error?.message || 'Failed to create group';
-            this.showToast(`❌ ${message}`, 'error');
+            this.showToast(message, 'error');
           }
         });
       }
@@ -130,7 +138,7 @@ export class AppComponent implements OnInit {
       if (result) {
         this.groupsService.updateGroup(group._id, result).subscribe({
           next: () => {
-            this.showToast('✅ Group updated!', 'success');
+            this.showToast('Group updated!', 'success');
             this.groups = this.groups.map(g =>
               g._id === group._id
                 ? { ...g, name: result.name, color: result.color, icon: result.icon }
@@ -139,36 +147,48 @@ export class AppComponent implements OnInit {
           },
           error: (err) => {
             const message = err.error?.message || 'Failed to update group';
-            this.showToast(`❌ ${message}`, 'error');
+            this.showToast(message, 'error');
           }
         });
       }
     });
   }
 
+  // ✅ FIX: Replaced window.confirm with MatDialog ConfirmDialogComponent
   deleteGroup(group: any, event: Event): void {
     event.stopPropagation();
     this.activeGroupMenu = null;
 
-    const confirmed = window.confirm(
-      `Delete "${group.name}" group?\n\nContacts will NOT be deleted, just untagged.`
-    );
-
-    if (!confirmed) return;
-
-    this.groups = this.groups.filter(g => g._id !== group._id);
-
-    this.groupsService.deleteGroup(group._id).subscribe({
-      next: () => {
-        this.showToast(`✅ "${group.name}" deleted!`, 'success');
-        if (this.router.url.includes(group._id)) {
-          this.router.navigate(['/contacts']);
-        }
-      },
-      error: () => {
-        this.showToast('❌ Failed to delete group', 'error');
-        this.loadGroups();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      panelClass: 'confirm-dialog-panel',
+      disableClose: true,
+      data: {
+        title: 'Delete Group',
+        message: `Delete "${group.name}" group? Contacts will NOT be deleted, just untagged.`,
+        confirmText: 'Yes, Delete',
+        cancelText: 'Cancel',
+        type: 'danger'
       }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+
+      // Optimistic update
+      this.groups = this.groups.filter(g => g._id !== group._id);
+
+      this.groupsService.deleteGroup(group._id).subscribe({
+        next: () => {
+          this.showToast(`"${group.name}" deleted!`, 'success');
+          if (this.router.url.includes(group._id)) {
+            this.router.navigate(['/contacts']);
+          }
+        },
+        error: () => {
+          this.showToast('Failed to delete group', 'error');
+          this.loadGroups(); // Restore on failure
+        }
+      });
     });
   }
 
@@ -193,10 +213,10 @@ export class AppComponent implements OnInit {
   // ==========================================
 
   loadContactsCount(): void {
-    this.http.get<any>(`${this.apiBase}/api/contacts?page=1&limit=1`)
+    // ✅ FIX: Use environment.apiUrl instead of duplicated URL logic
+    this.http.get<any>(`${environment.apiUrl}/api/contacts?page=1&limit=1`)
       .subscribe({
         next: (res) => {
-          // FIX: Use Promise.resolve to avoid ExpressionChangedAfterChecked error
           Promise.resolve().then(() => {
             this.totalContactsCount = res.totalContacts || 0;
             this.cdr.detectChanges();
@@ -216,11 +236,11 @@ export class AppComponent implements OnInit {
     if (this.router.url !== '/contacts') {
       this.router.navigate(['/contacts']).then(() => {
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('export-csv'));
-        }, 1000);
+          window.dispatchEvent(new CustomEvent('export-csv-trigger'));
+        }, 500);
       });
     } else {
-      window.dispatchEvent(new CustomEvent('export-csv'));
+      window.dispatchEvent(new CustomEvent('export-csv-trigger'));
     }
   }
 
@@ -231,18 +251,16 @@ export class AppComponent implements OnInit {
   toggleFavorites(): void {
     this.showOnlyFavorites = !this.showOnlyFavorites;
 
-    if (this.router.url !== '/contacts') {
-      this.router.navigate(['/contacts']).then(() => {
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('toggle-favorites', {
-            detail: { showOnlyFavorites: this.showOnlyFavorites }
-          }));
-        }, 500);
-      });
-    } else {
+    const dispatch = () => {
       window.dispatchEvent(new CustomEvent('toggle-favorites', {
         detail: { showOnlyFavorites: this.showOnlyFavorites }
       }));
+    };
+
+    if (this.router.url !== '/contacts') {
+      this.router.navigate(['/contacts']).then(() => setTimeout(dispatch, 300));
+    } else {
+      dispatch();
     }
   }
 

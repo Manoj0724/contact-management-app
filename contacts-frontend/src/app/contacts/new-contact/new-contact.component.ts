@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { Contact } from '../models/contact.model';
 
 @Component({
   selector: 'app-new-contact',
@@ -27,7 +28,19 @@ import { MatSelectModule } from '@angular/material/select';
 })
 export class NewContactComponent {
 
-  form = {
+  saving = false;
+
+  // FIX: Use Contact['title'] so TypeScript knows the exact allowed values
+  form: {
+    title: Contact['title'];
+    firstName: string;
+    lastName: string;
+    mobile1: string;
+    mobile2: string;
+    city: string;
+    state: string;
+    pincode: string;
+  } = {
     title: '',
     firstName: '',
     lastName: '',
@@ -46,38 +59,40 @@ export class NewContactComponent {
   ) {}
 
   save(): void {
-    // Validate form before submitting
     if (!this.isFormValid()) {
-      alert('⚠️ Please fill all mandatory fields correctly!');
+      this.showToast('Please fill all mandatory fields correctly!', 'error');
       return;
     }
 
-    const payload = {
+    this.saving = true;
+
+    const payload: Partial<Contact> = {
       title: this.form.title,
-      firstName: this.form.firstName,
-      lastName: this.form.lastName,
+      firstName: this.form.firstName.trim(),
+      lastName: this.form.lastName.trim(),
       mobile1: this.form.mobile1,
       mobile2: this.form.mobile2 || undefined,
       address: {
-        city: this.form.city,
-        state: this.form.state,
+        city: this.form.city.trim(),
+        state: this.form.state.trim(),
         pincode: this.form.pincode
       }
     };
 
     this.contactsService.createContact(payload).subscribe({
       next: () => {
-        this.showToast('✅ Contact added successfully!', 'success');
+        this.showToast('Contact added successfully!', 'success');
+        this.saving = false;
         this.router.navigate(['/contacts']);
       },
-      error: (error) => {
-        this.showToast('❌ Failed to save contact', 'error');
+      error: () => {
+        this.showToast('Failed to save contact. Please try again.', 'error');
+        this.saving = false;
       }
     });
   }
 
   isFormValid(): boolean {
-    // Check all required fields
     if (!this.form.title) return false;
     if (!this.form.firstName || !/^[a-zA-Z\s]+$/.test(this.form.firstName)) return false;
     if (!this.form.lastName || !/^[a-zA-Z\s]+$/.test(this.form.lastName)) return false;
@@ -95,7 +110,7 @@ export class NewContactComponent {
 
   showToast(message: string, type: 'success' | 'error' = 'success'): void {
     this.zone.run(() => {
-      this.snackBar.open(message, '✕', {
+      this.snackBar.open(message, 'x', {
         duration: 3000,
         horizontalPosition: 'right',
         verticalPosition: 'top',

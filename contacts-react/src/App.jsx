@@ -18,7 +18,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors closeButton />
       <Layout onGroupFilter={handleGroupFilter} activeGroupId={groupFilter} totalContacts={totalContacts}>
         <Routes>
           <Route path="/" element={<Navigate to="/contacts" replace />} />
@@ -30,8 +30,8 @@ export default function App() {
               onTotalChange={setTotalContacts}
             />
           } />
-          <Route path="/contacts/new" element={<ContactFormPage />} />
-          <Route path="/contacts/edit/:id" element={<ContactFormPage />} />
+          <Route path="/contacts/new" element={<ContactFormPage key="new" />} />
+          <Route path="/contacts/edit/:id" element={<ContactFormPage key="edit" />} />
           <Route path="/bulk-upload" element={<BulkUploadPage />} />
           <Route path="*" element={<Navigate to="/contacts" replace />} />
         </Routes>

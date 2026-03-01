@@ -1,364 +1,221 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Trash2, Download, Users, Star, StarOff, Edit2, ChevronLeft, ChevronRight, SlidersHorizontal, X, Phone, MapPin } from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { getContacts, deleteContact, bulkDeleteContacts, toggleFavorite, bulkAssignGroup, exportCSV, getGroups } from '@/services/api'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { ArrowLeft, Save, X, User, Phone, MapPin, Tag } from 'lucide-react'
+import { createContact, updateContact, getContact, getGroups } from '@/services/api'
 import { toast } from 'sonner'
 
-export default function ContactsPage({ groupFilter, groupName, onGroupFilter, onTotalChange }) {
-  const [contacts, setContacts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(5)
-  const [total, setTotal] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-  const [selected, setSelected] = useState([])
-  const [groups, setGroups] = useState([])
-  const [advSearch, setAdvSearch] = useState({ firstName: '', lastName: '', mobile: '', city: '' })
-  const [showAdv, setShowAdv] = useState(false)
-  const [isSearchActive, setIsSearchActive] = useState(false)
-  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false)
+const TITLES = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof']
+const EMPTY_FORM = {
+  title: '', firstName: '', lastName: '',
+  mobile1: '', mobile2: '', email: '',
+  address: { street: '', city: '', state: '', pincode: '', country: '' },
+  groupIds: []
+}
+
+export default function ContactFormPage() {
+  const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isEdit = !!id
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(false)
+  const [groups, setGroups] = useState([])
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [errors, setErrors] = useState({})
 
-  useEffect(() => { fetchContacts() }, [page, limit, groupFilter])
-  useEffect(() => { getGroups().then(r => setGroups(r.data.groups || r.data || [])) }, [])
+  useEffect(() => { setForm(EMPTY_FORM); setErrors({}) }, [location.pathname])
+  useEffect(() => { getGroups().then(r => setGroups(r.data.groups || r.data || [])).catch(() => {}) }, [])
 
-  const fetchContacts = async (searchParams = {}) => {
+  useEffect(() => {
+    if (!isEdit || !id) return
+    setFetching(true)
+    getContact(id).then(r => {
+      const c = r.data.contact || r.data
+      setForm({
+        title: c.title || '', firstName: c.firstName || '', lastName: c.lastName || '',
+        mobile1: c.mobile1 || '', mobile2: c.mobile2 || '', email: c.email || '',
+        address: { street: c.address?.street || '', city: c.address?.city || '', state: c.address?.state || '', pincode: c.address?.pincode || '', country: c.address?.country || '' },
+        groupIds: c.groupIds || []
+      })
+    }).catch(() => toast.error('Failed to load contact')).finally(() => setFetching(false))
+  }, [id, isEdit])
+
+  const set = (field, val) => setForm(p => ({ ...p, [field]: val }))
+  const setAddr = (field, val) => setForm(p => ({ ...p, address: { ...p.address, [field]: val } }))
+
+  const validate = () => {
+    const e = {}
+    if (!form.firstName.trim()) e.firstName = 'Required'
+    if (!form.lastName.trim()) e.lastName = 'Required'
+    if (!form.mobile1 || !/^\d{10}$/.test(form.mobile1)) e.mobile1 = 'Must be 10 digits'
+    if (form.mobile2 && !/^\d{10}$/.test(form.mobile2)) e.mobile2 = 'Must be 10 digits'
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validate()) return
     setLoading(true)
     try {
-      const params = { page, limit, ...searchParams }
-      if (groupFilter === 'favorites') params.favorites = true
-      else if (groupFilter) params.groupId = groupFilter
-      const res = await getContacts(params)
-      setContacts(res.data.contacts || [])
-      setTotal(res.data.total || 0)
-      setTotalPages(res.data.totalPages || 1)
-      if (onTotalChange) onTotalChange(res.data.total || 0)
-      setSelected([])
-    } catch {
-      toast.error('Failed to load contacts')
-    } finally {
-      setLoading(false)
-    }
+      if (isEdit) { await updateContact(id, form); toast.success('Contact updated!') }
+      else { await createContact(form); toast.success('Contact created!') }
+      navigate('/contacts')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save contact')
+    } finally { setLoading(false) }
   }
 
-  const handleSearch = () => { setPage(1); setIsSearchActive(true); fetchContacts({ search }) }
-  const handleClearSearch = () => { setSearch(''); setIsSearchActive(false); setPage(1); fetchContacts({}) }
-  const handleAdvSearch = () => { setPage(1); setIsSearchActive(true); setShowAdv(false); fetchContacts(advSearch) }
+  const toggleGroup = (gid) => set('groupIds', form.groupIds.includes(gid) ? form.groupIds.filter(x => x !== gid) : [...form.groupIds, gid])
+  const inp = (err) => `w-full px-4 py-3 text-sm border rounded-lg outline-none transition-colors placeholder-slate-400 text-slate-700 ${err ? 'border-red-300 focus:border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-400'}`
 
-  const handleDelete = async (id, name) => {
-    if (!confirm(`Delete ${name}?`)) return
-    try { await deleteContact(id); toast.success('Contact deleted'); fetchContacts() }
-    catch { toast.error('Failed to delete') }
-  }
-
-  const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selected.length} contacts?`)) return
-    try { await bulkDeleteContacts(selected); toast.success(`${selected.length} contacts deleted`); fetchContacts() }
-    catch { toast.error('Failed to delete') }
-  }
-
-  const handleToggleFavorite = async (id, isFav) => {
-    try { await toggleFavorite(id, !isFav); fetchContacts() }
-    catch { toast.error('Failed to update') }
-  }
-
-  const handleBulkAssign = async (groupId) => {
-    if (!groupId) return
-    setGroupDropdownOpen(false)
-    try { await bulkAssignGroup(selected, groupId); toast.success('Assigned to group'); fetchContacts() }
-    catch { toast.error('Failed to assign') }
-  }
-
-  const handleExportCSV = async () => {
-    try {
-      const res = await exportCSV()
-      const url = window.URL.createObjectURL(new Blob([res.data]))
-      const a = document.createElement('a'); a.href = url; a.download = 'contacts.csv'; a.click()
-      toast.success('CSV exported successfully!')
-    } catch { toast.error('Export failed') }
-  }
-
-  const toggleSelect = (id) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
-  const toggleSelectAll = () => setSelected(selected.length === contacts.length ? [] : contacts.map(c => c._id))
-
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisible = 3
-    let start = Math.max(1, page - 1)
-    let end = Math.min(totalPages, start + maxVisible - 1)
-    if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1)
-    for (let i = start; i <= end; i++) pages.push(i)
-    return pages
-  }
+  if (fetching) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   return (
-    <div className="space-y-4">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-          {groupFilter === 'favorites' ? <Star size={28} className="text-yellow-400 fill-yellow-400" /> : null}
-          {groupName || 'All Contacts'}
-          {groupFilter && (
-            <button onClick={() => onGroupFilter(null, null)} className="ml-2 text-slate-400 hover:text-slate-600">
-              <X size={18} />
-            </button>
-          )}
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          {groupFilter === 'favorites' ? 'Your starred favorite contacts' : 'Manage and organize your contacts'}
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 relative bg-white rounded-lg border border-slate-200 shadow-sm flex items-center">
-          <input
-            className="flex-1 px-4 py-3 text-sm text-slate-700 placeholder-slate-400 bg-transparent outline-none rounded-lg"
-            placeholder="Search contacts..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          />
-          <Search size={18} className="absolute right-4 text-slate-400" />
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? 'Edit Contact' : 'Add Contact'}</h1>
+          <p className="text-slate-500 text-sm mt-1">{isEdit ? 'Update the contact details below' : 'Fill in the contact details below'}</p>
         </div>
-        <button
-          onClick={isSearchActive ? handleClearSearch : handleSearch}
-          className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 shadow-sm transition-colors">
-          <Search size={16} />
-          {isSearchActive ? 'Clear' : 'Search'}
-        </button>
-        <button
-          onClick={() => setShowAdv(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 shadow-sm transition-colors">
-          <SlidersHorizontal size={16} />
-          Advanced
+        <button onClick={() => navigate('/contacts')} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors bg-white shadow-sm">
+          <ArrowLeft size={15} /> Back to Contacts
         </button>
       </div>
 
-      {/* Bulk Actions Bar */}
-      {selected.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-3 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg">
-            <span className="text-yellow-300">✓</span>
-            <span className="font-bold text-lg">{selected.length}</span>
-            <span className="text-sm font-medium">SELECTED</span>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-blue-800 px-8 py-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-white text-xl font-bold">{isEdit ? 'Update Contact Information' : 'Contact Information'}</h2>
+            <p className="text-blue-200 text-sm mt-1">All fields marked with * are required</p>
           </div>
-          <div className="flex-1" />
-          <button onClick={handleBulkDelete}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
-            <Trash2 size={15} /> Delete
-          </button>
-          <button onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors">
-            <Download size={15} /> Export
-          </button>
-          <div className="relative">
-            <button onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
-              Add to Group <ChevronRight size={14} className={`transition-transform ${groupDropdownOpen ? 'rotate-90' : ''}`} />
-            </button>
-            {groupDropdownOpen && (
-              <div className="absolute top-full mt-1 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-50 min-w-40">
+          <div className="text-blue-300">
+            {isEdit
+              ? <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              : <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8 space-y-8">
+          {/* Personal Info */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <User size={15} className="text-slate-400" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Personal Information</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">Title</label>
+                <div className="relative">
+                  <select value={form.title} onChange={e => set('title', e.target.value)}
+                    className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 appearance-none bg-white text-slate-700">
+                    <option value="">Select</option>
+                    {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">First Name *</label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="First Name *" className={`${inp(errors.firstName)} pl-9`} />
+                </div>
+                {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">Last Name *</label>
+                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Last Name *" className={inp(errors.lastName)} />
+                {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Phone size={15} className="text-slate-400" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contact Details</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">Mobile 1 *</label>
+                <div className="relative">
+                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input value={form.mobile1} onChange={e => set('mobile1', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="10-digit mobile *" className={`${inp(errors.mobile1)} pl-9`} />
+                </div>
+                {errors.mobile1 && <p className="text-xs text-red-500 mt-1">{errors.mobile1}</p>}
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">Mobile 2 (Optional)</label>
+                <div className="relative">
+                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input value={form.mobile2} onChange={e => set('mobile2', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="Alternate number" className={`${inp(errors.mobile2)} pl-9`} />
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-slate-500 mb-1.5">Email (Optional)</label>
+                <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="email@example.com" type="email" className={inp(errors.email)} />
+                {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin size={15} className="text-red-400" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Address Details</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="sm:col-span-2 md:col-span-3">
+                <label className="block text-xs text-slate-500 mb-1.5">Street</label>
+                <input value={form.address.street} onChange={e => setAddr('street', e.target.value)} placeholder="Street address" className={inp()} />
+              </div>
+              {[['city','City'],['state','State'],['pincode','Pincode'],['country','Country']].map(([f,l]) => (
+                <div key={f}>
+                  <label className="block text-xs text-slate-500 mb-1.5">{l}</label>
+                  <input value={form.address[f]} onChange={e => setAddr(f, e.target.value)} placeholder={l} className={inp()} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Groups */}
+          {groups.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Tag size={15} className="text-yellow-500" />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Assign to Groups</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {groups.map(g => (
-                  <button key={g._id} onClick={() => handleBulkAssign(g._id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg">
-                    <span className="w-2 h-2 rounded-full" style={{ background: g.color }} />
+                  <button key={g._id} type="button" onClick={() => toggleGroup(g._id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${form.groupIds.includes(g._id) ? 'border-transparent text-white' : 'border-slate-200 text-slate-600 hover:border-slate-300 bg-white'}`}
+                    style={form.groupIds.includes(g._id) ? { background: g.color || '#3b82f6' } : {}}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: g.color || '#3b82f6' }} />
                     {g.name}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-          <button onClick={() => setSelected([])} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-            <X size={18} />
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 md:px-8 py-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+          <button onClick={() => navigate('/contacts')} className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-white transition-colors">
+            <X size={15} /> Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+            <Save size={15} />
+            {loading ? 'Saving...' : isEdit ? 'Update Contact' : 'Save Contact'}
           </button>
         </div>
-      )}
-
-      {/* Table Card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-700">Contact List</h2>
-          <span className="bg-blue-50 text-blue-600 border border-blue-100 text-xs font-semibold px-3 py-1 rounded-full">
-            {total} contacts
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="p-16 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">Loading contacts...</p>
-          </div>
-        ) : contacts.length === 0 ? (
-          <div className="p-16 text-center">
-            <Users size={48} className="mx-auto text-slate-200 mb-3" />
-            <h3 className="font-semibold text-slate-500 mb-1">No contacts found</h3>
-            <p className="text-slate-400 text-sm mb-4">Start by adding your first contact</p>
-            <button onClick={() => navigate('/contacts/new')}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
-              Add Contact
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="w-12 px-4 py-3 text-left">
-                    <Checkbox checked={selected.length === contacts.length && contacts.length > 0} onCheckedChange={toggleSelectAll} />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    NAME <span className="ml-1">↑</span>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">MOBILE</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">LOCATION</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.map((contact) => (
-                  <tr key={contact._id}
-                    className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${selected.includes(contact._id) ? 'bg-blue-50' : ''}`}>
-                    <td className="px-4 py-4">
-                      <Checkbox checked={selected.includes(contact._id)} onCheckedChange={() => toggleSelect(contact._id)} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-bold">
-                            {contact.firstName?.charAt(0)?.toUpperCase() || 'A'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-slate-800 text-sm">
-                            {contact.title} {contact.firstName} {contact.lastName}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {contact.mobile2 || 'No alternate'}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 hidden sm:table-cell">
-                      <div className="flex items-center gap-2 text-slate-600 text-sm">
-                        <Phone size={14} className="text-blue-400" />
-                        {contact.mobile1}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 hidden md:table-cell">
-                      <div className="flex items-center gap-2 text-slate-600 text-sm">
-                        <MapPin size={14} className="text-teal-400" />
-                        {contact.address?.city && contact.address?.state
-                          ? `${contact.address.city}, ${contact.address.state}`
-                          : '—'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleToggleFavorite(contact._id, contact.isFavorite)}
-                          className="p-1 hover:bg-slate-100 rounded transition-colors">
-                          {contact.isFavorite
-                            ? <Star size={17} className="text-yellow-400 fill-yellow-400" />
-                            : <StarOff size={17} className="text-slate-300" />}
-                        </button>
-                        <button onClick={() => navigate(`/contacts/edit/${contact._id}`)}
-                          className="p-1 hover:bg-slate-100 rounded transition-colors text-slate-500 hover:text-slate-700">
-                          <Edit2 size={17} />
-                        </button>
-                        <button onClick={() => handleDelete(contact._id, `${contact.firstName} ${contact.lastName}`)}
-                          className="p-1 hover:bg-red-50 rounded transition-colors text-slate-400 hover:text-red-500">
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && contacts.length > 0 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">Rows:</span>
-              <Select value={String(limit)} onValueChange={v => { setLimit(Number(v)); setPage(1) }}>
-                <SelectTrigger className="h-9 w-20 text-sm border-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[3, 5, 10, 20].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <span className="text-sm text-slate-500 hidden sm:block">
-              Page {page} of {totalPages}
-            </span>
-
-            <div className="flex items-center gap-1">
-              <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
-                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft size={16} className="text-slate-600" />
-              </button>
-              {getPageNumbers().map(p => (
-                <button key={p} onClick={() => setPage(p)}
-                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-blue-600 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                  {p}
-                </button>
-              ))}
-              <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
-                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight size={16} className="text-slate-600" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Advanced Search Dialog */}
-      <Dialog open={showAdv} onOpenChange={setShowAdv}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
-          <DialogHeader className="bg-blue-700 px-6 py-5">
-            <DialogTitle className="text-white text-xl font-bold">Advanced Search</DialogTitle>
-          </DialogHeader>
-          <div className="p-6 grid grid-cols-2 gap-4">
-            {[
-              ['firstName', 'First Name', '👤'],
-              ['lastName', 'Last Name', '👤'],
-              ['mobile', 'Mobile', '📞'],
-              ['city', 'City', '🏢'],
-            ].map(([key, label, icon]) => (
-              <div key={key}
-                className="border border-slate-200 rounded-lg flex items-center gap-3 px-4 py-3 focus-within:border-blue-400 transition-colors">
-                <span className="text-slate-400">{icon === '👤' ? <Users size={16} /> : icon === '📞' ? <Phone size={16} /> : <MapPin size={16} />}</span>
-                <input
-                  className="flex-1 text-sm text-slate-700 outline-none placeholder-slate-400"
-                  placeholder={label}
-                  value={advSearch[key]}
-                  onChange={e => setAdvSearch(p => ({ ...p, [key]: e.target.value }))}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="px-6 pb-6 flex justify-end gap-3">
-            <button onClick={() => setShowAdv(false)}
-              className="px-5 py-2.5 border border-slate-200 rounded-full text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleAdvSearch}
-              className="px-5 py-2.5 border border-slate-300 rounded-full text-sm font-medium text-blue-600 hover:bg-blue-50 flex items-center gap-2 transition-colors">
-              <Search size={15} /> Search
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -18,7 +18,8 @@ export default defineConfig({
       '/api': {
         target: 'https://contact-management-app-1-qyg8.onrender.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
+        rewrite: (path) => path,
       }
     }
   }

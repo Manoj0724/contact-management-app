@@ -22,25 +22,21 @@ async function routes(fastify, options) {
     }
   }, async (request, reply) => {
     try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        search = '', 
-        sortBy = 'firstName', 
-        sortOrder = 'asc', 
+      const {
+        page = 1,
+        limit = 10,
+        search = '',
+        sortBy = 'firstName',
+        sortOrder = 'asc',
         favorites,
-        group 
+        group
       } = request.query;
-      
+
       const favoritesOnly = favorites === 'true';
       const query = {};
-      
-      // Group filter
-      if (group) {
-        query.groups = group;
-      }
-      
-      // Search filter
+
+      if (group) query.groups = group;
+
       if (search) {
         query.$or = [
           { firstName: new RegExp(search, 'i') },
@@ -49,41 +45,32 @@ async function routes(fastify, options) {
           { 'address.city': new RegExp(search, 'i') }
         ];
       }
-      
-      // Favorites filter
-      if (favoritesOnly) {
-        query.isFavorite = true;
-      }
-      
+
+      if (favoritesOnly) query.isFavorite = true;
+
       const skip = (page - 1) * limit;
       const sortOrderNum = sortOrder === 'desc' ? -1 : 1;
-      
-      // Sort: Favorites first, then by sortBy field
-      const sortCriteria = favoritesOnly 
+      const sortCriteria = favoritesOnly
         ? { [sortBy]: sortOrderNum }
         : { isFavorite: -1, [sortBy]: sortOrderNum };
-      
+
       const contacts = await Contact.find(query)
         .sort(sortCriteria)
         .skip(skip)
         .limit(parseInt(limit));
-      
+
       const total = await Contact.countDocuments(query);
-      
+
       return {
         contacts,
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         totalContacts: total
       };
-      
+
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error fetching contacts', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error fetching contacts', error: error.message });
     }
   });
 
@@ -93,23 +80,11 @@ async function routes(fastify, options) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const contact = await Contact.findById(request.params.id);
-      
-      if (!contact) {
-        return reply.code(404).send({ 
-          success: false,
-          message: 'Contact not found' 
-        });
-      }
-      
+      if (!contact) return reply.code(404).send({ success: false, message: 'Contact not found' });
       return contact;
-      
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error fetching contact', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error fetching contact', error: error.message });
     }
   });
 
@@ -120,16 +95,10 @@ async function routes(fastify, options) {
     try {
       const contact = new Contact(request.body);
       await contact.save();
-      
       reply.code(201).send(contact);
-      
     } catch (error) {
       fastify.log.error(error);
-      reply.code(400).send({ 
-        success: false,
-        message: 'Error creating contact', 
-        error: error.message 
-      });
+      reply.code(400).send({ success: false, message: 'Error creating contact', error: error.message });
     }
   });
 
@@ -143,23 +112,11 @@ async function routes(fastify, options) {
         request.body,
         { new: true, runValidators: true }
       );
-      
-      if (!contact) {
-        return reply.code(404).send({ 
-          success: false,
-          message: 'Contact not found' 
-        });
-      }
-      
+      if (!contact) return reply.code(404).send({ success: false, message: 'Contact not found' });
       return contact;
-      
     } catch (error) {
       fastify.log.error(error);
-      reply.code(400).send({ 
-        success: false,
-        message: 'Error updating contact', 
-        error: error.message 
-      });
+      reply.code(400).send({ success: false, message: 'Error updating contact', error: error.message });
     }
   });
 
@@ -169,26 +126,11 @@ async function routes(fastify, options) {
   fastify.delete('/:id', async (request, reply) => {
     try {
       const contact = await Contact.findByIdAndDelete(request.params.id);
-      
-      if (!contact) {
-        return reply.code(404).send({ 
-          success: false,
-          message: 'Contact not found' 
-        });
-      }
-      
-      return { 
-        success: true,
-        message: 'Contact deleted successfully' 
-      };
-      
+      if (!contact) return reply.code(404).send({ success: false, message: 'Contact not found' });
+      return { success: true, message: 'Contact deleted successfully' };
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error deleting contact', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error deleting contact', error: error.message });
     }
   });
 
@@ -198,70 +140,34 @@ async function routes(fastify, options) {
   fastify.patch('/:id/favorite', async (request, reply) => {
     try {
       const { isFavorite } = request.body;
-      
       const contact = await Contact.findByIdAndUpdate(
         request.params.id,
-        { 
-          isFavorite,
-          favoritedAt: isFavorite ? new Date() : null
-        },
+        { isFavorite, favoritedAt: isFavorite ? new Date() : null },
         { new: true }
       );
-      
-      if (!contact) {
-        return reply.code(404).send({ 
-          success: false,
-          message: 'Contact not found' 
-        });
-      }
-      
-      return {
-        success: true,
-        contact,
-        message: isFavorite ? 'Added to favorites' : 'Removed from favorites'
-      };
-      
+      if (!contact) return reply.code(404).send({ success: false, message: 'Contact not found' });
+      return { success: true, contact, message: isFavorite ? 'Added to favorites' : 'Removed from favorites' };
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error updating favorite', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error updating favorite', error: error.message });
     }
   });
 
   // ==========================================
   // BULK DELETE
+  // ✅ NOTE: Must be registered BEFORE /:id routes to avoid conflict
   // ==========================================
   fastify.delete('/bulk', async (request, reply) => {
     try {
       const { ids } = request.body;
-      
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return reply.code(400).send({ 
-          success: false,
-          message: 'Please provide an array of contact IDs' 
-        });
+        return reply.code(400).send({ success: false, message: 'Please provide an array of contact IDs' });
       }
-      
-      const result = await Contact.deleteMany({ 
-        _id: { $in: ids }
-      });
-      
-      return {
-        success: true,
-        deleted: result.deletedCount,
-        message: `${result.deletedCount} contact(s) deleted`
-      };
-      
+      const result = await Contact.deleteMany({ _id: { $in: ids } });
+      return { success: true, deleted: result.deletedCount, message: `${result.deletedCount} contact(s) deleted` };
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error deleting contacts', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error deleting contacts', error: error.message });
     }
   });
 
@@ -271,37 +177,49 @@ async function routes(fastify, options) {
   fastify.patch('/bulk/favorite', async (request, reply) => {
     try {
       const { ids, isFavorite } = request.body;
-      
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return reply.code(400).send({ 
-          success: false,
-          message: 'Please provide an array of contact IDs' 
-        });
+        return reply.code(400).send({ success: false, message: 'Please provide an array of contact IDs' });
       }
-      
       const result = await Contact.updateMany(
         { _id: { $in: ids } },
-        { 
-          $set: { 
-            isFavorite,
-            favoritedAt: isFavorite ? new Date() : null
-          }
-        }
+        { $set: { isFavorite, favoritedAt: isFavorite ? new Date() : null } }
       );
-      
+      return { success: true, updated: result.modifiedCount, message: `${result.modifiedCount} contact(s) updated` };
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ success: false, message: 'Error updating favorites', error: error.message });
+    }
+  });
+
+  // ==========================================
+  // ✅ NEW: BULK ASSIGN TO GROUP
+  // ==========================================
+  fastify.patch('/bulk/group', async (request, reply) => {
+    try {
+      const { ids, groupId } = request.body;
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return reply.code(400).send({ success: false, message: 'No contact IDs provided' });
+      }
+
+      if (!groupId) {
+        return reply.code(400).send({ success: false, message: 'No group ID provided' });
+      }
+
+      const result = await Contact.updateMany(
+        { _id: { $in: ids } },
+        { $addToSet: { groups: groupId } }
+      );
+
       return {
         success: true,
         updated: result.modifiedCount,
-        message: `${result.modifiedCount} contact(s) updated`
+        message: `${result.modifiedCount} contact(s) assigned to group`
       };
-      
+
     } catch (error) {
       fastify.log.error(error);
-      reply.code(500).send({ 
-        success: false,
-        message: 'Error updating favorites', 
-        error: error.message 
-      });
+      reply.code(500).send({ success: false, message: 'Error assigning group', error: error.message });
     }
   });
 
