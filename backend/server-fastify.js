@@ -1,5 +1,5 @@
-/**
- * 🚀 FASTIFY BACKEND SERVER
+﻿/**
+ * ðŸš€ FASTIFY BACKEND SERVER
  * Modern, fast alternative to Express
  * 
  * Why Fastify?
@@ -20,9 +20,9 @@ const cors = require('@fastify/cors');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/contactsdb');
-    console.log('✅ MongoDB Connected');
+    console.log('âœ… MongoDB Connected');
   } catch (error) {
-    console.error('❌ MongoDB Connection Error:', error);
+    console.error('âŒ MongoDB Connection Error:', error);
     process.exit(1);
   }
 };
@@ -33,13 +33,7 @@ const connectDB = async () => {
 
 // CORS - Allow frontend to access API
 fastify.register(cors, {
-  origin: [
-  'http://localhost:4200',
-  'http://localhost:5173',
-  'http://frontend:4200',
-  'https://contact-management-app-2-gnmv.onrender.com',
-  'https://contact-management-app-3-xxxx.onrender.com'
-],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 });
@@ -116,14 +110,14 @@ const start = async () => {
     await fastify.listen({ port: 5000, host: '0.0.0.0' });
     
     console.log('');
-    console.log('🚀 ========================================');
+    console.log('ðŸš€ ========================================');
     console.log('   ContactsPro API Server (Fastify)');
     console.log('   ========================================');
-    console.log('   📡 Server: http://localhost:5000');
-    console.log('   🗄️  Database: MongoDB Connected');
-    console.log('   ⚡ Framework: Fastify (Fast!)');
-    console.log('   📝 Version: 1.3.0');
-    console.log('========================================== 🚀');
+    console.log('   ðŸ“¡ Server: http://localhost:5000');
+    console.log('   ðŸ—„ï¸  Database: MongoDB Connected');
+    console.log('   âš¡ Framework: Fastify (Fast!)');
+    console.log('   ðŸ“ Version: 1.3.0');
+    console.log('========================================== ðŸš€');
     console.log('');
     
   } catch (err) {
@@ -134,10 +128,10 @@ const start = async () => {
 
 // Handle shutdown gracefully
 const closeGracefully = async (signal) => {
-  console.log(`\n🛑 Received signal ${signal}, closing server...`);
+  console.log(`\nðŸ›‘ Received signal ${signal}, closing server...`);
   await fastify.close();
   await mongoose.connection.close();
-  console.log('✅ Server closed successfully');
+  console.log('âœ… Server closed successfully');
   process.exit(0);
 };
 
@@ -146,3 +140,4 @@ process.on('SIGTERM', () => closeGracefully('SIGTERM'));
 
 // Start the server
 start();
+
