@@ -1,11 +1,18 @@
 ﻿import axios from 'axios'
 
-const api = axios.create({ baseURL: '', headers: { 'Content-Type': 'application/json' } })
+// ✅ In production (Render): uses VITE_API_URL = https://contactshub-backend.onrender.com
+// ✅ In local Docker: uses '' (empty) so Nginx proxy handles /api → backend
+const baseURL = import.meta.env.VITE_API_URL || ''
+
+const api = axios.create({
+  baseURL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000, // 15s timeout — Render free tier can be slow on first wake
+})
 
 // ─── CONTACTS ─────────────────────────────────────────────────────────────────
 export const getContacts        = (params)     => api.get('/api/contacts', { params })
 export const getContact         = (id)         => api.get(`/api/contacts/${id}`)
-// ✅ FIX: save alphabetically by always defaulting sort to firstName asc
 export const createContact      = (data)       => api.post('/api/contacts', data)
 export const updateContact      = (id, data)   => api.put(`/api/contacts/${id}`, data)
 export const deleteContact      = (id)         => api.delete(`/api/contacts/${id}`)
@@ -13,11 +20,8 @@ export const toggleFavorite     = (id, isFav)  => api.patch(`/api/contacts/${id}
 export const bulkDeleteContacts = (ids)        => api.delete('/api/contacts/bulk', { data: { ids } })
 export const bulkAssignGroup    = (ids, gid)   => api.patch('/api/contacts/bulk/group', { ids, groupId: gid })
 export const bulkFavorite       = (ids, isFav) => api.patch('/api/contacts/bulk/favorite', { ids, isFavorite: isFav })
-
-// ✅ FIX: backend expects { contacts: [...] } not bare array
 export const bulkUpload         = (contacts)   => api.post('/api/contacts/bulk-upload', { contacts })
-
-export const getAllContactsForExport = () =>
+export const getAllContactsForExport = ()      =>
   api.get('/api/contacts', { params: { page: 1, limit: 9999, sortBy: 'firstName', sortOrder: 'asc' } })
 
 // ─── GROUPS ───────────────────────────────────────────────────────────────────
@@ -42,7 +46,7 @@ export const exportToCSV = (contacts, filename = 'contacts.csv') => {
   setTimeout(() => URL.revokeObjectURL(a.href), 100)
 }
 
-// Legacy alias
+// Legacy aliases
 export const getAllForExport = getAllContactsForExport
 export const exportCSV = exportToCSV
 
