@@ -107,7 +107,7 @@ const start = async () => {
     await connectDB();
     
     // Start server
-    await fastify.listen({ port: 5000, host: '0.0.0.0' });
+    await fastify.listen({ port: process.env.PORT || 5000, host: '0.0.0.0' });
     
     console.log('');
     console.log('ðŸš€ ========================================');
@@ -140,4 +140,5 @@ process.on('SIGTERM', () => closeGracefully('SIGTERM'));
 
 // Start the server
 start();
+
 
