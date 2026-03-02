@@ -1,7 +1,0 @@
-{
-  "/api": {
-    "target": "https://contact-management-app-1-qyg8.onrender.com",
-    "secure": true,
-    "changeOrigin": true
-  }
-}

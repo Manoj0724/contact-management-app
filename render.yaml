@@ -1,0 +1,35 @@
+services:
+  # ── Backend (Node/Fastify) ──────────────────────────────────────────────────
+  - type: web
+    name: contacts-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server-fastify.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: contacts-mongo
+          property: connectionString
+      - key: PORT
+        value: 5000
+
+  # ── Frontend (Static site via Vite build) ───────────────────────────────────
+  - type: web
+    name: contacts-frontend
+    runtime: node
+    rootDir: contacts-react
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist -l 3000
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: contacts-backend
+          type: web
+          property: host
+
+databases:
+  - name: contacts-mongo
+    plan: free

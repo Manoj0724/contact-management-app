@@ -1,219 +1,307 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { ArrowLeft, Save, X, User, Phone, MapPin, Tag } from 'lucide-react'
-import { createContact, updateContact, getContact, getGroups } from '@/services/api'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Save, Loader2, User, Phone, MapPin } from 'lucide-react'
+import { getContact, createContact, updateContact, getGroups } from '@/services/api'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
-const TITLES = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof']
-const EMPTY_FORM = {
-  title: '', firstName: '', lastName: '',
-  mobile1: '', mobile2: '', email: '',
-  address: { street: '', city: '', state: '', pincode: '', country: '' },
-  groupIds: []
+const TITLES = ['Mr', 'Mrs', 'Ms', 'Dr']
+
+const INIT = { title: '', firstName: '', lastName: '', mobile1: '', mobile2: '', city: '', state: '', pincode: '', groups: [] }
+
+const VALIDATE = {
+  title:     v => !v                   ? 'Required' : '',
+  firstName: v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  lastName:  v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  mobile1:   v => !v                   ? 'Required' : !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
+  mobile2:   v => v && !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
+  city:      v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  state:     v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  pincode:   v => !v                   ? 'Required' : !/^\d{6}$/.test(v) ? 'Must be 6 digits' : '',
+}
+
+function Field({ label, required, error, hint, children }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      {children}
+      {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  )
+}
+
+function Card({ icon, iconBg, iconColor, title, children }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+        <div className={`w-7 h-7 ${iconBg} rounded-lg flex items-center justify-center shrink-0`}>
+          <span className={iconColor}>{icon}</span>
+        </div>
+        <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </div>
+  )
 }
 
 export default function ContactFormPage() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const isEdit = !!id
-  const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(false)
-  const [groups, setGroups] = useState([])
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [errors, setErrors] = useState({})
+  const navigate    = useNavigate()
+  const { id }      = useParams()
+  const isEdit      = !!id
 
-  useEffect(() => { setForm(EMPTY_FORM); setErrors({}) }, [location.pathname])
-  useEffect(() => { getGroups().then(r => setGroups(r.data.groups || r.data || [])).catch(() => {}) }, [])
+  const [form, setForm]         = useState(INIT)
+  const [errors, setErrors]     = useState({})
+  const [loading, setLoading]   = useState(false)
+  const [fetching, setFetching] = useState(isEdit)
+  const [groups, setGroups]     = useState([])
 
   useEffect(() => {
-    if (!isEdit || !id) return
+    if (!isEdit) return
     setFetching(true)
-    getContact(id).then(r => {
-      const c = r.data.contact || r.data
-      setForm({
-        title: c.title || '', firstName: c.firstName || '', lastName: c.lastName || '',
-        mobile1: c.mobile1 || '', mobile2: c.mobile2 || '', email: c.email || '',
-        address: { street: c.address?.street || '', city: c.address?.city || '', state: c.address?.state || '', pincode: c.address?.pincode || '', country: c.address?.country || '' },
-        groupIds: c.groupIds || []
+    getContact(id)
+      .then(r => {
+        const c = r.data
+        setForm({
+          title:     c.title || '',
+          firstName: c.firstName || '',
+          lastName:  c.lastName || '',
+          mobile1:   c.mobile1 || '',
+          mobile2:   c.mobile2 || '',
+          city:      c.address?.city || '',
+          state:     c.address?.state || '',
+          pincode:   c.address?.pincode || '',
+          groups:    (c.groups || []).map(g => typeof g === 'object' ? g._id : g),
+        })
       })
-    }).catch(() => toast.error('Failed to load contact')).finally(() => setFetching(false))
-  }, [id, isEdit])
+      .catch(() => { toast.error('Contact not found'); navigate('/contacts') })
+      .finally(() => setFetching(false))
+  }, [id, isEdit, navigate])
 
-  const set = (field, val) => setForm(p => ({ ...p, [field]: val }))
-  const setAddr = (field, val) => setForm(p => ({ ...p, address: { ...p.address, [field]: val } }))
+  useEffect(() => {
+    getGroups().then(r => setGroups(r.data.groups || [])).catch(() => {})
+  }, [])
 
-  const validate = () => {
-    const e = {}
-    if (!form.firstName.trim()) e.firstName = 'Required'
-    if (!form.lastName.trim()) e.lastName = 'Required'
-    if (!form.mobile1 || !/^\d{10}$/.test(form.mobile1)) e.mobile1 = 'Must be 10 digits'
-    if (form.mobile2 && !/^\d{10}$/.test(form.mobile2)) e.mobile2 = 'Must be 10 digits'
-    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
-    setErrors(e)
-    return Object.keys(e).length === 0
+  const set = (field, val) => {
+    setForm(f => ({ ...f, [field]: val }))
+    if (errors[field]) setErrors(e => ({ ...e, [field]: '' }))
   }
 
-  const handleSubmit = async () => {
-    if (!validate()) return
+  const validate = () => {
+    const errs = {}
+    Object.entries(VALIDATE).forEach(([f, fn]) => { const e = fn(form[f] || ''); if (e) errs[f] = e })
+    setErrors(errs)
+    return !Object.keys(errs).length
+  }
+
+  const toggleGroup = gid =>
+    setForm(f => ({ ...f, groups: f.groups.includes(gid) ? f.groups.filter(x => x !== gid) : [...f.groups, gid] }))
+
+  const handleSave = async () => {
+    if (!validate()) { toast.error('Please fix the errors below'); return }
     setLoading(true)
+    const payload = {
+      title:     form.title,
+      firstName: form.firstName.trim(),
+      lastName:  form.lastName.trim(),
+      mobile1:   form.mobile1,
+      mobile2:   form.mobile2 || undefined,
+      address: { city: form.city.trim(), state: form.state.trim(), pincode: form.pincode },
+      groups:    form.groups,
+    }
     try {
-      if (isEdit) { await updateContact(id, form); toast.success('Contact updated!') }
-      else { await createContact(form); toast.success('Contact created!') }
+      if (isEdit) { await updateContact(id, payload); toast.success('Contact updated!') }
+      else { await createContact(payload); toast.success('Contact created!') }
       navigate('/contacts')
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to save contact')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to save')
     } finally { setLoading(false) }
   }
 
-  const toggleGroup = (gid) => set('groupIds', form.groupIds.includes(gid) ? form.groupIds.filter(x => x !== gid) : [...form.groupIds, gid])
-  const inp = (err) => `w-full px-4 py-3 text-sm border rounded-lg outline-none transition-colors placeholder-slate-400 text-slate-700 ${err ? 'border-red-300 focus:border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-400'}`
+  if (fetching) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-5 p-4 sm:p-0">
+        <div className="flex items-center gap-3">
+          <div className="skeleton w-9 h-9 rounded-xl" />
+          <div className="skeleton h-7 w-40 rounded" />
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="skeleton h-3 w-20 rounded" />
+              <div className="skeleton h-10 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-  if (fetching) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  const err = f => errors[f] ? 'border-red-300 focus-visible:ring-red-400' : ''
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? 'Edit Contact' : 'Add Contact'}</h1>
-          <p className="text-slate-500 text-sm mt-1">{isEdit ? 'Update the contact details below' : 'Fill in the contact details below'}</p>
-        </div>
-        <button onClick={() => navigate('/contacts')} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors bg-white shadow-sm">
-          <ArrowLeft size={15} /> Back to Contacts
+    <div className="max-w-2xl mx-auto pb-10">
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5 sm:mb-6">
+        <button onClick={() => navigate('/contacts')}
+          className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-700 cursor-pointer">
+          <ArrowLeft size={18} />
         </button>
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-slate-800">{isEdit ? 'Edit Contact' : 'New Contact'}</h1>
+          <p className="text-slate-400 text-xs mt-0.5">
+            {isEdit ? 'Update contact details below' : 'Fill in the details to create a new contact'}
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="bg-blue-800 px-8 py-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-white text-xl font-bold">{isEdit ? 'Update Contact Information' : 'Contact Information'}</h2>
-            <p className="text-blue-200 text-sm mt-1">All fields marked with * are required</p>
-          </div>
-          <div className="text-blue-300">
-            {isEdit
-              ? <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              : <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}
-          </div>
-        </div>
+      <div className="space-y-4">
 
-        <div className="p-6 md:p-8 space-y-8">
-          {/* Personal Info */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <User size={15} className="text-slate-400" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Personal Information</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Title</label>
-                <div className="relative">
-                  <select value={form.title} onChange={e => set('title', e.target.value)}
-                    className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 appearance-none bg-white text-slate-700">
-                    <option value="">Select</option>
-                    {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">First Name *</label>
-                <div className="relative">
-                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="First Name *" className={`${inp(errors.firstName)} pl-9`} />
-                </div>
-                {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Last Name *</label>
-                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Last Name *" className={inp(errors.lastName)} />
-                {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
-              </div>
-            </div>
-          </div>
+        {/* ── Personal Info ── */}
+        <Card icon={<User size={14} />} iconBg="bg-indigo-100" iconColor="text-indigo-600" title="Personal Information">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          {/* Contact Details */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Phone size={15} className="text-slate-400" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contact Details</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Mobile 1 *</label>
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input value={form.mobile1} onChange={e => set('mobile1', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="10-digit mobile *" className={`${inp(errors.mobile1)} pl-9`} />
+            {/* Title buttons */}
+            <div className="sm:col-span-2">
+              <Field label="Title" required error={errors.title}>
+                <div className="flex gap-2 flex-wrap">
+                  {TITLES.map(t => (
+                    <button key={t} type="button" onClick={() => set('title', form.title === t ? '' : t)}
+                      title={`Select ${t}`}
+                      className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
+                        form.title === t
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50'
+                      }`}>
+                      {t}
+                    </button>
+                  ))}
                 </div>
-                {errors.mobile1 && <p className="text-xs text-red-500 mt-1">{errors.mobile1}</p>}
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Mobile 2 (Optional)</label>
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input value={form.mobile2} onChange={e => set('mobile2', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="Alternate number" className={`${inp(errors.mobile2)} pl-9`} />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs text-slate-500 mb-1.5">Email (Optional)</label>
-                <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="email@example.com" type="email" className={inp(errors.email)} />
-                {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
-              </div>
+              </Field>
             </div>
-          </div>
 
-          {/* Address */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin size={15} className="text-red-400" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Address Details</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="sm:col-span-2 md:col-span-3">
-                <label className="block text-xs text-slate-500 mb-1.5">Street</label>
-                <input value={form.address.street} onChange={e => setAddr('street', e.target.value)} placeholder="Street address" className={inp()} />
-              </div>
-              {[['city','City'],['state','State'],['pincode','Pincode'],['country','Country']].map(([f,l]) => (
-                <div key={f}>
-                  <label className="block text-xs text-slate-500 mb-1.5">{l}</label>
-                  <input value={form.address[f]} onChange={e => setAddr(f, e.target.value)} placeholder={l} className={inp()} />
-                </div>
-              ))}
-            </div>
-          </div>
+            {/* First Name */}
+            <Field label="First Name" required error={errors.firstName}>
+              <Input
+                value={form.firstName}
+                onChange={e => set('firstName', e.target.value)}
+                placeholder="First Name"
+                className={`cursor-text ${err('firstName')}`}
+              />
+            </Field>
 
-          {/* Groups */}
-          {groups.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Tag size={15} className="text-yellow-500" />
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Assign to Groups</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {groups.map(g => (
+            {/* Last Name */}
+            <Field label="Last Name" required error={errors.lastName}>
+              <Input
+                value={form.lastName}
+                onChange={e => set('lastName', e.target.value)}
+                placeholder="Last Name"
+                className={`cursor-text ${err('lastName')}`}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        {/* ── Phone ── */}
+        <Card icon={<Phone size={14} />} iconBg="bg-emerald-100" iconColor="text-emerald-600" title="Phone Numbers">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Primary Mobile" required error={errors.mobile1}>
+              <Input
+                value={form.mobile1}
+                onChange={e => set('mobile1', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="Phone 1"
+                maxLength={10}
+                inputMode="numeric"
+                className={`cursor-text ${err('mobile1')}`}
+              />
+            </Field>
+            <Field label="Alternate Mobile" error={errors.mobile2}>
+              <Input
+                value={form.mobile2}
+                onChange={e => set('mobile2', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="Phone 2"
+                maxLength={10}
+                inputMode="numeric"
+                className={`cursor-text ${err('mobile2')}`}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        {/* ── Address ── */}
+        <Card icon={<MapPin size={14} />} iconBg="bg-violet-100" iconColor="text-violet-600" title="Address">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="City" required error={errors.city}>
+              <Input
+                value={form.city}
+                onChange={e => set('city', e.target.value)}
+                placeholder="City"
+                className={`cursor-text ${err('city')}`}
+              />
+            </Field>
+            <Field label="State" required error={errors.state}>
+              <Input
+                value={form.state}
+                onChange={e => set('state', e.target.value)}
+                placeholder="State"
+                className={`cursor-text ${err('state')}`}
+              />
+            </Field>
+            <Field label="Pincode" required error={errors.pincode}>
+              <Input
+                value={form.pincode}
+                onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="Pincode"
+                maxLength={6}
+                inputMode="numeric"
+                className={`cursor-text ${err('pincode')}`}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        {/* ── Groups ── */}
+        {groups.length > 0 && (
+          <Card
+            icon={<span className="text-amber-600 font-bold text-xs">G</span>}
+            iconBg="bg-amber-100" iconColor="" title="Assign to Groups">
+            <div className="flex flex-wrap gap-2">
+              {groups.map(g => {
+                const active = form.groups.includes(g._id)
+                return (
                   <button key={g._id} type="button" onClick={() => toggleGroup(g._id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${form.groupIds.includes(g._id) ? 'border-transparent text-white' : 'border-slate-200 text-slate-600 hover:border-slate-300 bg-white'}`}
-                    style={form.groupIds.includes(g._id) ? { background: g.color || '#3b82f6' } : {}}>
-                    <span className="w-2 h-2 rounded-full" style={{ background: g.color || '#3b82f6' }} />
+                    title={active ? `Remove from ${g.name}` : `Add to ${g.name}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all cursor-pointer ${
+                      active ? 'text-white shadow-sm' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                    style={active ? { background: g.color, borderColor: g.color } : {}}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: active ? 'rgba(255,255,255,0.5)' : g.color }} />
                     {g.name}
                   </button>
-                ))}
-              </div>
+                )
+              })}
             </div>
-          )}
-        </div>
+          </Card>
+        )}
 
-        <div className="px-6 md:px-8 py-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-          <button onClick={() => navigate('/contacts')} className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-white transition-colors">
-            <X size={15} /> Cancel
-          </button>
-          <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
-            <Save size={15} />
-            {loading ? 'Saving...' : isEdit ? 'Update Contact' : 'Save Contact'}
-          </button>
+        {/* ── Actions ── */}
+        <div className="flex items-center justify-end gap-3 pt-2 pb-4">
+          <Button variant="outline" onClick={() => navigate('/contacts')} disabled={loading}
+            className="cursor-pointer">
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={loading}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 min-w-36 cursor-pointer">
+            {loading
+              ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
+              : <><Save size={14} /> {isEdit ? 'Save Changes' : 'Create Contact'}</>
+            }
+          </Button>
         </div>
       </div>
     </div>

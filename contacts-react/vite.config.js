@@ -1,25 +1,26 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __dirname  = dirname(__filename)
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    tailwindcss(),
+    react(),
+  ],
   resolve: {
-    alias: {
-      "@": resolve(__dirname, "./src"),
-    },
+    alias: { '@': resolve(__dirname, './src') },
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'https://contact-management-app-1-qyg8.onrender.com',
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path,
       }
     }
   }

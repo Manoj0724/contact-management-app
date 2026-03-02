@@ -1,6 +1,6 @@
-
 services:
 
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
   mongodb:
     image: mongo:6
     container_name: contacts_db
@@ -11,7 +11,10 @@ services:
     environment:
       MONGO_INITDB_DATABASE: contactsdb
     restart: unless-stopped
+    networks:
+      - contacts_net
 
+  # ── Backend (Fastify) ─────────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -22,28 +25,31 @@ services:
     environment:
       - MONGO_URI=mongodb://mongodb:27017/contactsdb
       - PORT=5000
-      - NODE_ENV=development
+      - NODE_ENV=production
     depends_on:
       - mongodb
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     restart: unless-stopped
+    networks:
+      - contacts_net
 
+  # ── Frontend (React + Nginx) ──────────────────────────────────────────────────
   frontend:
     build:
-      context: ./contacts-frontend
+      context: ./contacts-react
       dockerfile: Dockerfile
     container_name: contacts_frontend
     ports:
-      - "4200:4200"
+      - "80:80"
     depends_on:
       - backend
-    volumes:
-      - ./contacts-frontend:/app
-      - /app/node_modules
     restart: unless-stopped
+    networks:
+      - contacts_net
 
 volumes:
   mongo_data:
     driver: local
+
+networks:
+  contacts_net:
+    driver: bridge

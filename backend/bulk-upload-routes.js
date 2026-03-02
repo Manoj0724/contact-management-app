@@ -1,100 +1,104 @@
-// ============================================================
-// FILE: C:\js_projects\contact_js\backend\bulk-upload-routes.js
-// ============================================================
 const Contact = require('./Contact');
 
 async function bulkUploadRoutes(fastify, options) {
 
+  // Accepts JSON body: { contacts: [...] } OR just an array [...]
   fastify.post('/bulk-upload', async (request, reply) => {
     try {
-      const { contacts } = request.body;
+      // Support both { contacts: [...] } and plain array
+      let contacts = Array.isArray(request.body)
+        ? request.body
+        : request.body?.contacts
 
       if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
-        return reply.code(400).send({ success: false, message: 'No contacts provided' });
+        return reply.code(400).send({ success: false, message: 'No contacts provided' })
       }
 
       if (contacts.length > 500) {
-        return reply.code(400).send({ success: false, message: 'Maximum 500 contacts per upload' });
+        return reply.code(400).send({ success: false, message: 'Maximum 500 contacts per upload' })
       }
 
-      const results = { success: [], errors: [] };
+      const results = { success: [], errors: [] }
 
       for (let i = 0; i < contacts.length; i++) {
-        const row = contacts[i];
-        const rowNum = i + 1;
-        const name = `${row.firstName || ''} ${row.lastName || ''}`.trim() || `Row ${rowNum}`;
+        const row    = contacts[i]
+        const rowNum = i + 1
+        const name   = `${row.firstName || ''} ${row.lastName || ''}`.trim() || `Row ${rowNum}`
 
         try {
-          // Validate
-          if (!row.title || !['Mr', 'Mrs', 'Ms', 'Dr'].includes(row.title.trim())) {
-            results.errors.push({ row: rowNum, name, error: 'Title must be Mr, Mrs, Ms, or Dr' });
-            continue;
-          }
-          if (!row.firstName || !/^[a-zA-Z\s]+$/.test(row.firstName)) {
-            results.errors.push({ row: rowNum, name, error: 'Invalid first name (letters only)' });
-            continue;
-          }
-          if (!row.lastName || !/^[a-zA-Z\s]+$/.test(row.lastName)) {
-            results.errors.push({ row: rowNum, name, error: 'Invalid last name (letters only)' });
-            continue;
-          }
-          if (!row.mobile1 || !/^[0-9]{10}$/.test(String(row.mobile1).trim())) {
-            results.errors.push({ row: rowNum, name, error: 'Mobile must be exactly 10 digits' });
-            continue;
-          }
-          if (!row.city || !/^[a-zA-Z\s]+$/.test(row.city)) {
-            results.errors.push({ row: rowNum, name, error: 'Invalid city (letters only)' });
-            continue;
-          }
-          if (!row.state || !/^[a-zA-Z\s]+$/.test(row.state)) {
-            results.errors.push({ row: rowNum, name, error: 'Invalid state (letters only)' });
-            continue;
-          }
-          if (!row.pincode || !/^[0-9]{6}$/.test(String(row.pincode).trim())) {
-            results.errors.push({ row: rowNum, name, error: 'Pincode must be exactly 6 digits' });
-            continue;
+          // ── Validate ────────────────────────────────────────────────────
+          const title = (row.title || '').trim()
+          if (!title || !['Mr','Mrs','Ms','Dr'].includes(title)) {
+            results.errors.push({ row: rowNum, name, error: 'Title must be Mr, Mrs, Ms, or Dr' }); continue
           }
 
-          // Save
+          const firstName = (row.firstName || '').trim()
+          if (!firstName || !/^[a-zA-Z\s]+$/.test(firstName)) {
+            results.errors.push({ row: rowNum, name, error: 'Invalid first name (letters only)' }); continue
+          }
+
+          const lastName = (row.lastName || '').trim()
+          if (!lastName || !/^[a-zA-Z\s]+$/.test(lastName)) {
+            results.errors.push({ row: rowNum, name, error: 'Invalid last name (letters only)' }); continue
+          }
+
+          const mobile1 = String(row.mobile1 || '').trim()
+          if (!mobile1 || !/^\d{10}$/.test(mobile1)) {
+            results.errors.push({ row: rowNum, name, error: 'Mobile1 must be exactly 10 digits' }); continue
+          }
+
+          const mobile2 = row.mobile2 ? String(row.mobile2).trim() : undefined
+          if (mobile2 && !/^\d{10}$/.test(mobile2)) {
+            results.errors.push({ row: rowNum, name, error: 'Mobile2 must be exactly 10 digits' }); continue
+          }
+
+          const city = (row.city || '').trim()
+          if (!city || !/^[a-zA-Z\s]+$/.test(city)) {
+            results.errors.push({ row: rowNum, name, error: 'Invalid city (letters only)' }); continue
+          }
+
+          const state = (row.state || '').trim()
+          if (!state || !/^[a-zA-Z\s]+$/.test(state)) {
+            results.errors.push({ row: rowNum, name, error: 'Invalid state (letters only)' }); continue
+          }
+
+          const pincode = String(row.pincode || '').trim()
+          if (!pincode || !/^\d{6}$/.test(pincode)) {
+            results.errors.push({ row: rowNum, name, error: 'Pincode must be exactly 6 digits' }); continue
+          }
+
+          // ── Save ────────────────────────────────────────────────────────
           const contact = new Contact({
-            title: row.title.trim(),
-            firstName: row.firstName.trim(),
-            lastName: row.lastName.trim(),
-            mobile1: String(row.mobile1).trim(),
-            mobile2: row.mobile2 ? String(row.mobile2).trim() : undefined,
-            address: {
-              city: row.city.trim(),
-              state: row.state.trim(),
-              pincode: String(row.pincode).trim()
-            },
+            title, firstName, lastName, mobile1,
+            mobile2: mobile2 || undefined,
+            address: { city, state, pincode },
             isFavorite: false
-          });
+          })
 
-          await contact.save();
-          results.success.push({ row: rowNum, name });
+          await contact.save()
+          results.success.push({ row: rowNum, name })
 
         } catch (err) {
           results.errors.push({
-            row: rowNum,
-            name,
+            row: rowNum, name,
             error: err.code === 11000 ? 'Duplicate mobile number' : err.message
-          });
+          })
         }
       }
 
       return reply.code(200).send({
-        success: true,
-        uploaded: results.success.length,
-        failed: results.errors.length,
-        total: contacts.length,
+        success:   true,
+        uploaded:  results.success.length,
+        failed:    results.errors.length,
+        total:     contacts.length,
         successList: results.success,
-        errorList: results.errors
-      });
+        errorList:   results.errors
+      })
 
     } catch (error) {
-      return reply.code(500).send({ success: false, message: 'Server error', error: error.message });
+      return reply.code(500).send({ success: false, message: 'Server error', error: error.message })
     }
-  });
+  })
 }
 
-module.exports = bulkUploadRoutes;
+module.exports = bulkUploadRoutes

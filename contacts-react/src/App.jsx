@@ -8,13 +8,10 @@ import BulkUploadPage from '@/pages/BulkUploadPage'
 
 export default function App() {
   const [groupFilter, setGroupFilter] = useState(null)
-  const [groupName, setGroupName] = useState(null)
+  const [groupName, setGroupName]     = useState(null)
   const [totalContacts, setTotalContacts] = useState(0)
 
-  const handleGroupFilter = (id, name) => {
-    setGroupFilter(id)
-    setGroupName(name)
-  }
+  const handleGroupFilter = (id, name) => { setGroupFilter(id); setGroupName(name) }
 
   return (
     <BrowserRouter>
@@ -30,10 +27,10 @@ export default function App() {
               onTotalChange={setTotalContacts}
             />
           } />
-          <Route path="/contacts/new" element={<ContactFormPage key="new" />} />
+          <Route path="/contacts/new"      element={<ContactFormPage key="new" />} />
           <Route path="/contacts/edit/:id" element={<ContactFormPage key="edit" />} />
-          <Route path="/bulk-upload" element={<BulkUploadPage />} />
-          <Route path="*" element={<Navigate to="/contacts" replace />} />
+          <Route path="/bulk-upload"       element={<BulkUploadPage />} />
+          <Route path="*"                  element={<Navigate to="/contacts" replace />} />
         </Routes>
       </Layout>
     </BrowserRouter>
