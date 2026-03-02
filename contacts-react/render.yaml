@@ -1,0 +1,4 @@
+headers:
+  - path: /assets/*
+    name: Content-Type
+    value: text/css
