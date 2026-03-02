@@ -58,8 +58,6 @@ fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, bo
 const contactRoutes = require('./contacts-routes'); 
 fastify.register(contactRoutes, { prefix: '/api/contacts' });
 
-const bulkUploadRoutes = require('./bulk-upload-routes');
-fastify.register(bulkUploadRoutes, { prefix: '/api/contacts' });
 
 const groupRoutes = require('./groups-routes');
 fastify.register(groupRoutes, { prefix: '/api/groups' });
