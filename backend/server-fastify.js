@@ -9,7 +9,8 @@
  * - Modern async/await patterns
  */
 
-const fastify = require('fastify')({ logger: true });
+const fastify = require('fastify')({ logger: true, bodyLimit: 10485760 }); // 10MB
+
 const mongoose = require('mongoose');
 const cors = require('@fastify/cors');
 
