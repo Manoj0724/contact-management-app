@@ -32,11 +32,14 @@ const connectDB = async () => {
 // ==========================================
 
 // CORS - Allow frontend to access API
-fastify.register(cors, {
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-});
+fastify.register(require('@fastify/cors'), {
+  origin: [
+    'http://localhost:5173',
+    'https://contactshub-frontend.onrender.com'  // ← your actual frontend URL
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true
+})
 
 // JSON Body Parser (built-in with Fastify)
 fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
