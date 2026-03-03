@@ -300,12 +300,7 @@ export default function ContactDetailPage() {
           </div>
           <ArrowLeft size={14} className="text-slate-300 rotate-180" />
         </a>
-        {/* WhatsApp video calls cannot be triggered from browser links */}
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
-          <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700 leading-relaxed">
-          </p>
-        </div>
+       
       </div>
 
     </div>
