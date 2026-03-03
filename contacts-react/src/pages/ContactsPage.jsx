@@ -19,6 +19,12 @@ import { Input } from '@/components/ui/input'
 
 function Avatar({ contact, size = 'md' }) {
   const sz = size === 'lg' ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm'
+  if (contact.photo) {
+    return (
+      <img src={contact.photo} alt={contact.firstName}
+        className={`${sz} rounded-full object-cover shrink-0 border-2 border-white shadow-sm`} />
+    )
+  }
   return (
     <div className={`${sz} rounded-full ${getAvatarColor(contact.firstName)} flex items-center justify-center text-white font-bold shrink-0`}>
       {getInitials(contact)}

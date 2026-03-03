@@ -1,23 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, User, Phone, MapPin, Mail } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, User, Phone, MapPin, Mail, Camera, X, Upload } from 'lucide-react'
 import { getContact, createContact, updateContact, getGroups } from '@/services/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getInitials, getAvatarColor } from '@/lib/utils'
 
-const TITLES = ['Mr', 'Mrs', 'Ms', 'Dr']
+const TITLES    = ['Mr', 'Mrs', 'Ms', 'Dr']
+const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const CLOUD_NAME = 'root'
+const UPLOAD_PRESET = 'contacts_photos'
 
 const INIT = {
   title: '', firstName: '', lastName: '',
   mobile1: '', mobile2: '',
   personalEmail: '', workEmail: '',
   city: '', state: '', pincode: '',
-  groups: []
+  groups: [], photo: ''
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const VALIDATE = {
   title:         v => !v ? 'Required' : '',
@@ -53,11 +55,97 @@ function Card({ icon, iconBg, iconColor, title, badge, children }) {
           <span className={iconColor}>{icon}</span>
         </div>
         <h2 className="text-sm font-semibold text-slate-700 flex-1">{title}</h2>
-        {badge && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 font-semibold">{badge}</span>
-        )}
+        {badge && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 font-semibold">{badge}</span>}
       </div>
       <div className="p-4 sm:p-5">{children}</div>
+    </div>
+  )
+}
+
+// ─── Photo Upload Component ───────────────────────────────────────────────────
+function PhotoUpload({ value, firstName, onChange }) {
+  const inputRef = useRef()
+  const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState(value || '')
+
+  const handleFile = async (file) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) return toast.error('Please select an image file')
+    if (file.size > 5 * 1024 * 1024) return toast.error('Image too large — max 5MB')
+
+    setUploading(true)
+    try {
+      // Preview immediately
+      const reader = new FileReader()
+      reader.onload = e => setPreview(e.target.result)
+      reader.readAsDataURL(file)
+
+      // Upload to Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', UPLOAD_PRESET)
+      formData.append('folder', 'contacts')
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (data.secure_url) {
+        setPreview(data.secure_url)
+        onChange(data.secure_url)
+        toast.success('Photo uploaded!')
+      } else {
+        toast.error('Upload failed — check Cloudinary preset')
+        setPreview(value || '')
+      }
+    } catch {
+      toast.error('Upload failed')
+      setPreview(value || '')
+    } finally { setUploading(false) }
+  }
+
+  const removePhoto = () => { setPreview(''); onChange('') }
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative group">
+        {/* Avatar / Photo */}
+        <div className={`w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shadow-md ${!preview ? getAvatarColor(firstName || 'A') : ''}`}>
+          {preview
+            ? <img src={preview} alt="Contact" className="w-full h-full object-cover" />
+            : <span className="text-white font-bold text-2xl">{firstName ? firstName[0].toUpperCase() : '?'}</span>
+          }
+        </div>
+
+        {/* Upload overlay */}
+        <button type="button"
+          onClick={() => inputRef.current?.click()}
+          className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          {uploading
+            ? <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Camera size={20} className="text-white" />}
+        </button>
+
+        {/* Remove button */}
+        {preview && !uploading && (
+          <button type="button" onClick={removePhoto}
+            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors">
+            <X size={12} className="text-white" />
+          </button>
+        )}
+      </div>
+
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={e => handleFile(e.target.files[0])} />
+
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 border border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-colors">
+        {uploading
+          ? <><span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Uploading...</>
+          : <><Upload size={14} /> {preview ? 'Change Photo' : 'Upload Photo'}</>}
+      </button>
+      <p className="text-xs text-slate-400">JPG, PNG, WebP — max 5MB</p>
     </div>
   )
 }
@@ -87,6 +175,7 @@ export default function ContactFormPage() {
           mobile2:       c.mobile2 || '',
           personalEmail: c.email?.personal || '',
           workEmail:     c.email?.work || '',
+          photo:         c.photo || '',
           city:          c.address?.city || '',
           state:         c.address?.state || '',
           pincode:       c.address?.pincode || '',
@@ -125,16 +214,14 @@ export default function ContactFormPage() {
       lastName:  form.lastName.trim(),
       mobile1:   form.mobile1,
       mobile2:   form.mobile2 || undefined,
-      email: {
-        personal: form.personalEmail.trim() || '',
-        work:     form.workEmail.trim() || '',
-      },
-      address: { city: form.city.trim(), state: form.state.trim(), pincode: form.pincode },
-      groups: form.groups,
+      email: { personal: form.personalEmail.trim() || '', work: form.workEmail.trim() || '' },
+      photo:     form.photo || '',
+      address:   { city: form.city.trim(), state: form.state.trim(), pincode: form.pincode },
+      groups:    form.groups,
     }
     try {
       if (isEdit) { await updateContact(id, payload); toast.success('Contact updated!') }
-      else { await createContact(payload); toast.success('Contact created!') }
+      else        { await createContact(payload);     toast.success('Contact created!') }
       navigate('/contacts')
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save')
@@ -181,6 +268,15 @@ export default function ContactFormPage() {
 
       <div className="space-y-4">
 
+        {/* ── Photo ── */}
+        <Card icon={<Camera size={14} />} iconBg="bg-pink-100" iconColor="text-pink-600" title="Profile Photo" badge="optional">
+          <PhotoUpload
+            value={form.photo}
+            firstName={form.firstName}
+            onChange={url => set('photo', url)}
+          />
+        </Card>
+
         {/* ── Personal Info ── */}
         <Card icon={<User size={14} />} iconBg="bg-indigo-100" iconColor="text-indigo-600" title="Personal Information">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -193,9 +289,7 @@ export default function ContactFormPage() {
                         form.title === t
                           ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
                           : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50'
-                      }`}>
-                      {t}
-                    </button>
+                      }`}>{t}</button>
                   ))}
                 </div>
               </Field>
@@ -232,64 +326,30 @@ export default function ContactFormPage() {
         {/* ── Email ── */}
         <Card icon={<Mail size={14} />} iconBg="bg-sky-100" iconColor="text-sky-600" title="Email Addresses" badge="optional">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            {/* Personal Email */}
-            <Field label="Personal Email" error={errors.personalEmail}
-              hint="e.g. john@gmail.com">
+            <Field label="Personal Email" error={errors.personalEmail} hint="e.g. john@gmail.com">
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
                   <div className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center">
                     <Mail size={11} className="text-rose-500" />
                   </div>
                 </div>
-                <Input
-                  value={form.personalEmail}
-                  onChange={e => set('personalEmail', e.target.value)}
-                  placeholder="personal@gmail.com"
-                  type="email"
-                  inputMode="email"
-                  className={`pl-10 cursor-text ${err('personalEmail')}`}
-                />
+                <Input value={form.personalEmail} onChange={e => set('personalEmail', e.target.value)}
+                  placeholder="personal@gmail.com" type="email" inputMode="email"
+                  className={`pl-10 cursor-text ${err('personalEmail')}`} />
               </div>
             </Field>
-
-            {/* Work Email */}
-            <Field label="Work Email" error={errors.workEmail}
-              hint="e.g. john@company.com">
+            <Field label="Work Email" error={errors.workEmail} hint="e.g. john@company.com">
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
                   <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
                     <Mail size={11} className="text-blue-500" />
                   </div>
                 </div>
-                <Input
-                  value={form.workEmail}
-                  onChange={e => set('workEmail', e.target.value)}
-                  placeholder="work@company.com"
-                  type="email"
-                  inputMode="email"
-                  className={`pl-10 cursor-text ${err('workEmail')}`}
-                />
+                <Input value={form.workEmail} onChange={e => set('workEmail', e.target.value)}
+                  placeholder="work@company.com" type="email" inputMode="email"
+                  className={`pl-10 cursor-text ${err('workEmail')}`} />
               </div>
             </Field>
-
-          </div>
-
-          {/* Email type legend */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center">
-                <Mail size={10} className="text-rose-500" />
-              </div>
-              <span className="text-xs text-slate-500">Personal</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
-                <Mail size={10} className="text-blue-500" />
-              </div>
-              <span className="text-xs text-slate-500">Work</span>
-            </div>
-            <span className="text-xs text-slate-400 ml-auto">Both fields are optional</span>
           </div>
         </Card>
 
@@ -344,8 +404,7 @@ export default function ContactFormPage() {
             className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 min-w-36 cursor-pointer">
             {loading
               ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
-              : <><Save size={14} /> {isEdit ? 'Save Changes' : 'Create Contact'}</>
-            }
+              : <><Save size={14} /> {isEdit ? 'Save Changes' : 'Create Contact'}</>}
           </Button>
         </div>
       </div>

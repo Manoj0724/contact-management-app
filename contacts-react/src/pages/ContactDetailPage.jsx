@@ -10,6 +10,12 @@ import { getInitials, getAvatarColor } from '@/lib/utils'
 import { toast } from 'sonner'
 
 function Avatar({ contact }) {
+  if (contact.photo) {
+    return (
+      <img src={contact.photo} alt={contact.firstName}
+        className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white" />
+    )
+  }
   return (
     <div className={`w-24 h-24 rounded-full ${getAvatarColor(contact.firstName)} flex items-center justify-center text-white font-bold text-3xl shadow-lg`}>
       {getInitials(contact)}
