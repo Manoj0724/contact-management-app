@@ -1,9 +1,9 @@
-const Contact = require('./Contact');
+﻿const Contact = require('./Contact');
 
 async function routes(fastify, options) {
 
   // ==========================================
-  // BULK ROUTES — must be BEFORE /:id
+  // BULK ROUTES â€” must be BEFORE /:id
   // ==========================================
 
   // BULK DELETE
@@ -169,7 +169,7 @@ async function routes(fastify, options) {
 
       const skip = (page - 1) * limit;
       const sortOrderNum = sortOrder === 'desc' ? -1 : 1;
-      const sortCriteria = { isFavorite: -1, [sortBy]: sortOrderNum };
+      const sortCriteria = { isFavorite: -1, firstName: 1, lastName: 1 };
 
       const contacts = await Contact.find(query).sort(sortCriteria).skip(skip).limit(parseInt(limit));
       const total    = await Contact.countDocuments(query);
