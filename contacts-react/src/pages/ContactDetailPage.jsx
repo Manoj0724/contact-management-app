@@ -304,7 +304,6 @@ export default function ContactDetailPage() {
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
           <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-700 leading-relaxed">
-            <strong>Video Call:</strong> WhatsApp does not support video call links from browsers. Open the chat above, then tap the 📹 icon inside WhatsApp to start a video call.
           </p>
         </div>
       </div>
