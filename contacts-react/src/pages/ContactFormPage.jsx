@@ -62,17 +62,131 @@ function Card({ icon, iconBg, iconColor, title, badge, children }) {
   )
 }
 
+// ─── Image Crop Modal ─────────────────────────────────────────────────────────
+function CropModal({ src, onDone, onCancel }) {
+  const canvasRef = useRef()
+  const imageRef  = useRef()
+  const [box,    setBox]    = useState({ x:0, y:0, size:200 })
+  const [drag,   setDrag]   = useState(false)
+  const [origin, setOrigin] = useState(null)
+  const [ready,  setReady]  = useState(false)
+
+  const onLoad = (e) => {
+    setReady(true)
+    const w = e.target.naturalWidth, h = e.target.naturalHeight
+    const size = Math.min(w, h) * 0.78
+    setBox({ x:(w-size)/2, y:(h-size)/2, size })
+  }
+
+  const pDown = (e) => {
+    e.preventDefault()
+    const t = e.touches ? e.touches[0] : e
+    setDrag(true)
+    setOrigin({ mx:t.clientX, my:t.clientY, bx:box.x, by:box.y })
+  }
+
+  const pMove = (e) => {
+    if (!drag || !origin || !imageRef.current) return
+    const t = e.touches ? e.touches[0] : e
+    const img = imageRef.current
+    const rect = img.getBoundingClientRect()
+    const sx = img.naturalWidth  / rect.width
+    const sy = img.naturalHeight / rect.height
+    const dx = (t.clientX - origin.mx) * sx
+    const dy = (t.clientY - origin.my) * sy
+    setBox(b => ({
+      ...b,
+      x: Math.max(0, Math.min(img.naturalWidth  - b.size, origin.bx + dx)),
+      y: Math.max(0, Math.min(img.naturalHeight - b.size, origin.by + dy)),
+    }))
+  }
+
+  const doCrop = () => {
+    const img = imageRef.current
+    const canvas = canvasRef.current
+    const SZ = 400
+    canvas.width = canvas.height = SZ
+    canvas.getContext('2d').drawImage(img, box.x, box.y, box.size, box.size, 0, 0, SZ, SZ)
+    canvas.toBlob(blob => {
+      onDone(new File([blob], 'photo.jpg', { type:'image/jpeg' }))
+    }, 'image/jpeg', 0.88)
+  }
+
+  const getOv = () => {
+    if (!imageRef.current || !ready) return null
+    const rect = imageRef.current.getBoundingClientRect()
+    const sx = rect.width  / imageRef.current.naturalWidth
+    const sy = rect.height / imageRef.current.naturalHeight
+    return { left:box.x*sx, top:box.y*sy, w:box.size*sx, h:box.size*sy }
+  }
+  const ov = getOv()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="bg-blue-600 px-4 py-3 flex items-center justify-between">
+          <span className="text-white font-bold text-sm">Crop Photo</span>
+          <button type="button" onClick={onCancel} className="text-white/70 hover:text-white"><X size={18}/></button>
+        </div>
+        <div className="p-4 space-y-3">
+          <p className="text-xs text-slate-500 text-center">Drag the circle to reposition</p>
+          <div className="relative select-none rounded-xl overflow-hidden bg-black"
+            style={{ maxHeight:'55vh', touchAction:'none' }}
+            onMouseMove={pMove} onMouseUp={()=>setDrag(false)} onMouseLeave={()=>setDrag(false)}
+            onTouchMove={pMove} onTouchEnd={()=>setDrag(false)}>
+            <img ref={imageRef} src={src} alt="crop"
+              className="w-full object-contain" onLoad={onLoad} draggable={false}/>
+            {ov && (
+              <>
+                <div className="absolute inset-0 pointer-events-none bg-black/50"
+                  style={{
+                    WebkitMaskImage:`radial-gradient(ellipse ${ov.w/2}px ${ov.h/2}px at ${ov.left+ov.w/2}px ${ov.top+ov.h/2}px, transparent 98%, black 100%)`,
+                    maskImage:`radial-gradient(ellipse ${ov.w/2}px ${ov.h/2}px at ${ov.left+ov.w/2}px ${ov.top+ov.h/2}px, transparent 98%, black 100%)`
+                  }}/>
+                <div className="absolute border-2 border-white cursor-move"
+                  style={{ left:ov.left, top:ov.top, width:ov.w, height:ov.h, borderRadius:'50%' }}
+                  onMouseDown={pDown} onTouchStart={pDown}>
+                  <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-1/3 left-0 right-0 border-t border-white/30"/>
+                    <div className="absolute top-2/3 left-0 right-0 border-t border-white/30"/>
+                    <div className="absolute left-1/3 top-0 bottom-0 border-l border-white/30"/>
+                    <div className="absolute left-2/3 top-0 bottom-0 border-l border-white/30"/>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button type="button" onClick={onCancel}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+            <button type="button" onClick={doCrop}
+              className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold">Crop & Upload</button>
+          </div>
+        </div>
+      </div>
+      <canvas ref={canvasRef} className="hidden"/>
+    </div>
+  )
+}
+
 // ─── Photo Upload Component ───────────────────────────────────────────────────
 function PhotoUpload({ value, firstName, onChange }) {
   const inputRef = useRef()
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview]     = useState(value || '')
-  const [viewing, setViewing]     = useState(false)
+  const [preview,  setPreview]    = useState(value || '')
+  const [viewing,  setViewing]    = useState(false)
+  const [cropSrc,  setCropSrc]    = useState(null)
 
-  const handleFile = async (file) => {
+  const handleFile = (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image file')
+    const reader = new FileReader()
+    reader.onload = e => setCropSrc(e.target.result)
+    reader.readAsDataURL(file)
+  }
 
+  const uploadFile = async (file) => {
+    setCropSrc(null)
     setUploading(true)
     try {
       const reader = new FileReader()
@@ -95,7 +209,7 @@ function PhotoUpload({ value, firstName, onChange }) {
         toast.success('Photo uploaded!')
       } else {
         console.error('Cloudinary error:', JSON.stringify(data))
-        toast.error(data.error?.message || 'Upload failed — make sure preset is Unsigned in Cloudinary')
+        toast.error(data.error?.message || 'Upload failed — make sure preset is Unsigned')
         setPreview(value || '')
       }
     } catch {
@@ -115,7 +229,6 @@ function PhotoUpload({ value, firstName, onChange }) {
             : <span className="text-white font-bold text-2xl">{firstName ? firstName[0].toUpperCase() : '?'}</span>
           }
         </div>
-
         <button type="button"
           onClick={() => preview ? setViewing(true) : inputRef.current?.click()}
           className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -124,7 +237,6 @@ function PhotoUpload({ value, firstName, onChange }) {
             : preview ? <Eye size={20} className="text-white" /> : <Camera size={20} className="text-white" />
           }
         </button>
-
         {preview && !uploading && (
           <button type="button" onClick={removePhoto}
             className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors">
@@ -134,7 +246,7 @@ function PhotoUpload({ value, firstName, onChange }) {
       </div>
 
       <input ref={inputRef} type="file" accept="image/*" className="hidden"
-        onChange={e => handleFile(e.target.files[0])} />
+        onChange={e => { handleFile(e.target.files[0]); e.target.value = '' }} />
 
       <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
         className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 border border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-colors">
@@ -142,13 +254,15 @@ function PhotoUpload({ value, firstName, onChange }) {
           ? <><span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Uploading...</>
           : <><Upload size={14} /> {preview ? 'Change Photo' : 'Upload Photo'}</>}
       </button>
-      <p className="text-xs text-slate-400">Any format (JPG, PNG, HEIC…) • hover photo to view</p>
+
+      {cropSrc && (
+        <CropModal src={cropSrc} onDone={uploadFile} onCancel={() => setCropSrc(null)} />
+      )}
 
       {viewing && preview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
           onClick={() => setViewing(false)}>
-          <button
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white transition-colors"
+          <button className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white transition-colors"
             onClick={() => setViewing(false)}>
             <X size={20} />
           </button>
@@ -165,6 +279,7 @@ function PhotoUpload({ value, firstName, onChange }) {
     </div>
   )
 }
+
 
 
 export default function ContactFormPage() {

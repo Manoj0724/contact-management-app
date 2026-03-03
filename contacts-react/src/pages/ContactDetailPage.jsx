@@ -3,17 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Phone, Mail, MapPin, Star, Edit2, Trash2,
   MessageCircle, Video, Briefcase, Users, Mic,
-  Copy, Check, AlertTriangle
+  Copy, Check, AlertTriangle, X, ZoomIn
 } from 'lucide-react'
 import { getContact, toggleFavorite, deleteContact } from '@/services/api'
 import { getInitials, getAvatarColor } from '@/lib/utils'
 import { toast } from 'sonner'
 
-function Avatar({ contact }) {
+function Avatar({ contact, onView }) {
   if (contact.photo) {
     return (
-      <img src={contact.photo} alt={contact.firstName}
-        className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white" />
+      <div className="relative group cursor-pointer" onClick={onView}>
+        <img src={contact.photo} alt={contact.firstName}
+          className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white transition-transform group-hover:scale-105" />
+        <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <ZoomIn size={22} className="text-white" />
+        </div>
+      </div>
     )
   }
   return (
@@ -141,6 +146,7 @@ export default function ContactDetailPage() {
   const [loading, setLoading]   = useState(true)
   const [favLoading, setFavLoading] = useState(false)
   const [deleteDialog, setDeleteDialog] = useState({ open: false, loading: false })
+  const [photoViewer, setPhotoViewer]   = useState(false)
 
   useEffect(() => {
     getContact(id)
@@ -222,7 +228,7 @@ export default function ContactDetailPage() {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm px-6 py-8 mb-4 text-center">
         <div className="flex justify-center mb-4">
           <div className="relative">
-            <Avatar contact={contact} />
+            <Avatar contact={contact} onView={() => setPhotoViewer(true)} />
             {contact.isFavorite && (
               <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
                 <Star size={13} className="text-white fill-white" />
@@ -329,8 +335,38 @@ export default function ContactDetailPage() {
           <ArrowLeft size={14} className="text-slate-300 rotate-180" />
         </a>
 
-       
+        <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border-t border-blue-100">
+          <Mic size={14} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <strong>Voice Call:</strong> Open chat above → tap 📞 inside WhatsApp.
+          </p>
+        </div>
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
+          <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700 leading-relaxed">
+            <strong>Video Call:</strong> Open chat above → tap 📹 inside WhatsApp.
+          </p>
+        </div>
       </div>
+
+      {/* ── Photo Viewer Modal ── */}
+      {photoViewer && contact.photo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          onClick={() => setPhotoViewer(false)}>
+          <button
+            className="absolute top-4 right-4 w-11 h-11 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            onClick={() => setPhotoViewer(false)}>
+            <X size={22} />
+          </button>
+          <div className="flex flex-col items-center gap-3" onClick={e => e.stopPropagation()}>
+            <img
+              src={contact.photo}
+              alt={fullName}
+              className="max-w-[92vw] max-h-[82vh] rounded-2xl object-contain shadow-2xl" />
+            <p className="text-white/50 text-sm">{fullName}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Delete Dialog ── */}
       <DeleteDialog
