@@ -488,9 +488,7 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 text-slate-600 h-9 hidden sm:flex">
-            <Download size={14} /> Export CSV
-          </Button>
+         
           <Button variant="outline" size="sm" onClick={() => fetchContacts(true)} className="gap-1.5 text-slate-600 h-9">
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Refresh</span>
