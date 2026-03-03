@@ -168,16 +168,25 @@ async function routes(fastify, options) {
       }
 
       const skip = (page - 1) * limit;
-      const sortOrderNum = sortOrder === 'desc' ? -1 : 1;
-      const sortCriteria = { isFavorite: -1, firstName: 1, lastName: 1 };
-
-const contacts = await Contact.find(query)
-  .collation({ locale: 'en', caseLevel: false, strength: 1 })
-  .sort(sortCriteria)
-  .skip(parseInt(skip))
-  .limit(parseInt(limit))
-  .lean();
 const total = await Contact.countDocuments(query);
+
+// Fetch ALL matching contacts, sort in JS, then paginate
+const allContacts = await Contact.find(query).lean();
+
+allContacts.sort((a, b) => {
+  // Favorites always first
+  if (b.isFavorite !== a.isFavorite) return b.isFavorite ? 1 : -1;
+  // Then alphabetical by firstName (case-insensitive)
+  const fa = (a.firstName || '').toLowerCase();
+  const fb = (b.firstName || '').toLowerCase();
+  if (fa !== fb) return fa < fb ? -1 : 1;
+  // Then by lastName
+  const la = (a.lastName || '').toLowerCase();
+  const lb = (b.lastName || '').toLowerCase();
+  return la < lb ? -1 : 1;
+});
+
+const contacts = allContacts.slice(parseInt(skip), parseInt(skip) + parseInt(limit));
       return {
         contacts,
         currentPage:   parseInt(page),
