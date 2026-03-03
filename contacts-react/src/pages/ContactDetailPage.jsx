@@ -300,17 +300,13 @@ export default function ContactDetailPage() {
           </div>
           <ArrowLeft size={14} className="text-slate-300 rotate-180" />
         </a>
-        <a href={`https://wa.me/91${contact.mobile1}?text=Hello`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3.5 hover:bg-green-50 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <Video size={15} className="text-green-500" />
-          </div>
-          <div className="flex-1">
-            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Video</p>
-            <p className="text-sm font-semibold text-slate-700">Video Call on WhatsApp</p>
-          </div>
-          <ArrowLeft size={14} className="text-slate-300 rotate-180" />
-        </a>
+        {/* WhatsApp video calls cannot be triggered from browser links */}
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
+          <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700 leading-relaxed">
+            <strong>Video Call:</strong> WhatsApp does not support video call links from browsers. Open the chat above, then tap the 📹 icon inside WhatsApp to start a video call.
+          </p>
+        </div>
       </div>
 
     </div>
