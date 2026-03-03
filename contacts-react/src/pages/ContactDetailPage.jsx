@@ -335,19 +335,7 @@ export default function ContactDetailPage() {
           <ArrowLeft size={14} className="text-slate-300 rotate-180" />
         </a>
 
-        <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border-t border-blue-100">
-          <Mic size={14} className="text-blue-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-700 leading-relaxed">
-            <strong>Voice Call:</strong> Open chat above → tap 📞 inside WhatsApp.
-          </p>
-        </div>
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
-          <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700 leading-relaxed">
-            <strong>Video Call:</strong> Open chat above → tap 📹 inside WhatsApp.
-          </p>
-        </div>
-      </div>
+        
 
       {/* ── Photo Viewer Modal ── */}
       {photoViewer && contact.photo && (
