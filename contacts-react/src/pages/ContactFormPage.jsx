@@ -10,7 +10,7 @@ import { getInitials, getAvatarColor } from '@/lib/utils'
 
 const TITLES    = ['Mr', 'Mrs', 'Ms', 'Dr']
 const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const CLOUD_NAME = 'root'
+const CLOUD_NAME = 'dwkbnmqkn'
 const UPLOAD_PRESET = 'contacts_photos'
 
 const INIT = {
