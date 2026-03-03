@@ -691,37 +691,85 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
 
       {/* Pagination */}
       {!loading && total > 0 && (
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span>Rows:</span>
-            <div className="relative">
-              <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1) }}
-                className="appearance-none bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-slate-700 font-medium cursor-pointer hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                {PAGE_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <ChevronRight size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+        <>
+          {/* ── Desktop pagination (unchanged) ── */}
+          <div className="hidden sm:flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <span>Rows:</span>
+              <div className="relative">
+                <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1) }}
+                  className="appearance-none bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-slate-700 font-medium cursor-pointer hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                  {PAGE_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <ChevronRight size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+              </div>
+              <span className="text-slate-400">· Page {page} of {totalPages} · {total} total</span>
             </div>
-            <span className="hidden sm:inline text-slate-400">· Page {page} of {totalPages} · {total} total</span>
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="h-8 w-8 p-0"><ChevronLeft size={15} /></Button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let p = i + 1
+                if (totalPages > 5) {
+                  if (page <= 3) p = i + 1
+                  else if (page >= totalPages - 2) p = totalPages - 4 + i
+                  else p = page - 2 + i
+                }
+                return (
+                  <button key={p} onClick={() => setPage(p)}
+                    className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${page === p ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                    {p}
+                  </button>
+                )
+              })}
+              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages} className="h-8 w-8 p-0"><ChevronRight size={15} /></Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="h-8 w-8 p-0"><ChevronLeft size={15} /></Button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let p = i + 1
-              if (totalPages > 5) {
-                if (page <= 3) p = i + 1
-                else if (page >= totalPages - 2) p = totalPages - 4 + i
-                else p = page - 2 + i
-              }
-              return (
-                <button key={p} onClick={() => setPage(p)}
-                  className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${page === p ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                  {p}
-                </button>
-              )
-            })}
-            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages} className="h-8 w-8 p-0"><ChevronRight size={15} /></Button>
+
+          {/* ── Mobile pagination (clean & compact) ── */}
+          <div className="flex sm:hidden flex-col gap-3">
+            {/* Page info + rows selector */}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">
+                Page <span className="font-bold text-slate-700">{page}</span> of <span className="font-bold text-slate-700">{totalPages}</span>
+                <span className="text-slate-400"> · {total} contacts</span>
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500">Rows:</span>
+                <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1) }}
+                  className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                  {PAGE_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+            {/* Prev / page indicator / Next */}
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}
+                className="flex-1 h-9 gap-1.5 text-xs font-semibold">
+                <ChevronLeft size={14} /> Prev
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  let p = i + 1
+                  if (totalPages > 3) {
+                    if (page <= 2) p = i + 1
+                    else if (page >= totalPages - 1) p = totalPages - 2 + i
+                    else p = page - 1 + i
+                  }
+                  return (
+                    <button key={p} onClick={() => setPage(p)}
+                      className={`h-9 w-9 rounded-lg text-xs font-bold transition-colors ${page === p ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600'}`}>
+                      {p}
+                    </button>
+                  )
+                })}
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+                className="flex-1 h-9 gap-1.5 text-xs font-semibold">
+                Next <ChevronRight size={14} />
+              </Button>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <DeleteDialog open={deleteDialog.open} title="Delete Contact"
