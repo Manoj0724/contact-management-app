@@ -171,7 +171,7 @@ async function routes(fastify, options) {
       const sortOrderNum = sortOrder === 'desc' ? -1 : 1;
       const sortCriteria = { isFavorite: -1, firstName: 1, lastName: 1 };
 
-      const contacts = await Contact.find(query).sort(sortCriteria).skip(skip).limit(parseInt(limit));
+      const contacts = await Contact.find(query).collation({ locale: 'en', strength: 2 }).sort(sortCriteria).skip(skip).limit(parseInt(limit));
       const total    = await Contact.countDocuments(query);
 
       return {
@@ -261,3 +261,4 @@ async function routes(fastify, options) {
 }
 
 module.exports = routes;
+
