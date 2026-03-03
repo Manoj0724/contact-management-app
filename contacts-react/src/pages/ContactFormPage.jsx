@@ -96,7 +96,8 @@ function PhotoUpload({ value, firstName, onChange }) {
         onChange(data.secure_url)
         toast.success('Photo uploaded!')
       } else {
-        toast.error('Upload failed — check Cloudinary preset')
+        console.error('Cloudinary error:', JSON.stringify(data))
+        toast.error(data.error?.message || 'Upload failed — check Cloudinary preset is set to Unsigned')
         setPreview(value || '')
       }
     } catch {

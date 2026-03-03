@@ -169,9 +169,7 @@ async function routes(fastify, options) {
 
       const skip = (page - 1) * limit;
       const sortOrderNum = sortOrder === 'desc' ? -1 : 1;
-      const sortCriteria = favorites === 'true'
-        ? { [sortBy]: sortOrderNum }
-        : { isFavorite: -1, [sortBy]: sortOrderNum };
+      const sortCriteria = { [sortBy]: sortOrderNum };
 
       const contacts = await Contact.find(query).sort(sortCriteria).skip(skip).limit(parseInt(limit));
       const total    = await Contact.countDocuments(query);

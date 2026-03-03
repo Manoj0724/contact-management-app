@@ -3,6 +3,7 @@
   "short_name": "ContactsHub",
   "description": "Your personal contact management app",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
@@ -12,25 +13,38 @@
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["productivity", "utilities"],
-  "screenshots": [],
   "shortcuts": [
     {
       "name": "Add Contact",
+      "short_name": "Add",
       "url": "/contacts/new",
       "description": "Create a new contact"
     },
     {
       "name": "All Contacts",
+      "short_name": "Contacts",
       "url": "/contacts",
       "description": "View all contacts"
     }

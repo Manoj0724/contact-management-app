@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Phone, Mail, MapPin, Star, Edit2,
-  MessageCircle, Video, Briefcase, Users,
-  Copy, Check, Heart
+  ArrowLeft, Phone, Mail, MapPin, Star, Edit2, Trash2,
+  MessageCircle, Video, Briefcase, Users, Mic,
+  Copy, Check
 } from 'lucide-react'
-import { getContact, toggleFavorite } from '@/services/api'
+import { getContact, toggleFavorite, deleteContact } from '@/services/api'
 import { getInitials, getAvatarColor } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -106,6 +106,7 @@ export default function ContactDetailPage() {
   const [contact, setContact]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [favLoading, setFavLoading] = useState(false)
+  const [deleting, setDeleting]     = useState(false)
 
   useEffect(() => {
     getContact(id)
@@ -122,6 +123,16 @@ export default function ContactDetailPage() {
       toast.success(contact.isFavorite ? 'Removed from favorites' : '⭐ Added to favorites!')
     } catch { toast.error('Failed to update') }
     finally { setFavLoading(false) }
+  }
+
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this contact? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await deleteContact(id)
+      toast.success('Contact deleted')
+      navigate('/contacts')
+    } catch { toast.error('Failed to delete'); setDeleting(false) }
   }
 
   if (loading) return (
@@ -164,6 +175,12 @@ export default function ContactDetailPage() {
             className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500">
             <Edit2 size={18} />
           </button>
+          <button onClick={handleDelete} disabled={deleting}
+            className="p-2 hover:bg-red-50 rounded-xl transition-colors text-slate-400 hover:text-red-500">
+            {deleting
+              ? <span className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin block"/>
+              : <Trash2 size={18} />}
+          </button>
         </div>
       </div>
 
@@ -195,8 +212,8 @@ export default function ContactDetailPage() {
           </div>
         )}
 
-        {/* ── Quick Action Buttons ── */}
-        <div className="grid grid-cols-4 gap-2 mt-6">
+        {/* ── Quick Action Buttons — desktop only ── */}
+        <div className="hidden sm:grid grid-cols-4 gap-2 mt-6">
           <ActionBtn
             href={`tel:+91${contact.mobile1}`}
             icon={<Phone size={18} />}
@@ -300,7 +317,20 @@ export default function ContactDetailPage() {
           </div>
           <ArrowLeft size={14} className="text-slate-300 rotate-180" />
         </a>
-       
+        {/* Voice call note */}
+        <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border-t border-blue-100">
+          <Mic size={14} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <strong>WhatsApp Voice Call:</strong> Open the chat above, then tap the 📞 call icon inside WhatsApp to start a voice call.
+          </p>
+        </div>
+        {/* Video call note */}
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
+          <Video size={14} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700 leading-relaxed">
+            <strong>WhatsApp Video Call:</strong> Open the chat above, then tap the 📹 video icon inside WhatsApp to start a video call.
+          </p>
+        </div>
       </div>
 
     </div>

@@ -5,7 +5,7 @@ import { usePWA } from '@/hooks/usePWA'
 export default function PWAInstallBanner() {
   const { installPrompt, isInstalled, isIOS, install } = usePWA()
   const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem('pwa-dismissed') === 'true'
+    false
   )
 
   const handleDismiss = () => {
