@@ -276,12 +276,6 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
 
           <div className="flex-1" />
 
-          {/* Export button */}
-          <Button onClick={handleExport} variant="outline" size="sm"
-            className="hidden sm:flex gap-2 text-slate-600 h-8 text-xs border-slate-200 hover:border-blue-300 hover:text-blue-600">
-            <Download size={13} /> Export CSV
-          </Button>
-
           {/* Theme Toggle */}
           <ThemeToggle />
         </header>
