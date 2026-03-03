@@ -121,9 +121,11 @@ function AssignGroupModal({ open, groups, selectedCount, onAssign, onClose }) {
 function EmailBadge({ email, type }) {
   if (!email) return null
   return (
-    <a href={`mailto:${email}`} onClick={e => e.stopPropagation()}
+    <a href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}`}
+      target="_blank" rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
       className="flex items-center gap-1.5 text-xs group/email"
-      title={`${type}: ${email}`}>
+      title={`${type}: ${email} — Click to compose`}>
       <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${
         type === 'Work' ? 'bg-blue-100' : 'bg-rose-100'
       }`}>
@@ -252,7 +254,10 @@ function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onTogg
         )}
         {/* Emails in grid card */}
         {contact.email?.personal && (
-          <a href={`mailto:${contact.email.personal}`} onClick={e => e.stopPropagation()}
+          <a href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(contact.email.personal)}`}
+            target="_blank" rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            title="Open Gmail compose"
             className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-500 transition-colors group/em">
             <div className="w-4 h-4 rounded bg-rose-100 flex items-center justify-center shrink-0">
               <Mail size={9} className="text-rose-500" />
@@ -261,7 +266,10 @@ function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onTogg
           </a>
         )}
         {contact.email?.work && (
-          <a href={`mailto:${contact.email.work}`} onClick={e => e.stopPropagation()}
+          <a href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(contact.email.work)}`}
+            target="_blank" rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            title="Open Gmail compose"
             className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-500 transition-colors">
             <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center shrink-0">
               <Briefcase size={9} className="text-blue-500" />
