@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, User, Phone, MapPin } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, User, Phone, MapPin, Mail } from 'lucide-react'
 import { getContact, createContact, updateContact, getGroups } from '@/services/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -9,17 +9,27 @@ import { Label } from '@/components/ui/label'
 
 const TITLES = ['Mr', 'Mrs', 'Ms', 'Dr']
 
-const INIT = { title: '', firstName: '', lastName: '', mobile1: '', mobile2: '', city: '', state: '', pincode: '', groups: [] }
+const INIT = {
+  title: '', firstName: '', lastName: '',
+  mobile1: '', mobile2: '',
+  personalEmail: '', workEmail: '',
+  city: '', state: '', pincode: '',
+  groups: []
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const VALIDATE = {
-  title:     v => !v                   ? 'Required' : '',
-  firstName: v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
-  lastName:  v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
-  mobile1:   v => !v                   ? 'Required' : !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
-  mobile2:   v => v && !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
-  city:      v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
-  state:     v => !v.trim()            ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
-  pincode:   v => !v                   ? 'Required' : !/^\d{6}$/.test(v) ? 'Must be 6 digits' : '',
+  title:         v => !v ? 'Required' : '',
+  firstName:     v => !v.trim() ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  lastName:      v => !v.trim() ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  mobile1:       v => !v ? 'Required' : !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
+  mobile2:       v => v && !/^\d{10}$/.test(v) ? 'Must be 10 digits' : '',
+  personalEmail: v => v && !EMAIL_RE.test(v) ? 'Invalid email address' : '',
+  workEmail:     v => v && !EMAIL_RE.test(v) ? 'Invalid email address' : '',
+  city:          v => !v.trim() ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  state:         v => !v.trim() ? 'Required' : !/^[a-zA-Z\s]+$/.test(v) ? 'Letters only' : '',
+  pincode:       v => !v ? 'Required' : !/^\d{6}$/.test(v) ? 'Must be 6 digits' : '',
 }
 
 function Field({ label, required, error, hint, children }) {
@@ -35,14 +45,17 @@ function Field({ label, required, error, hint, children }) {
   )
 }
 
-function Card({ icon, iconBg, iconColor, title, children }) {
+function Card({ icon, iconBg, iconColor, title, badge, children }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4 border-b border-slate-100 bg-slate-50/60">
         <div className={`w-7 h-7 ${iconBg} rounded-lg flex items-center justify-center shrink-0`}>
           <span className={iconColor}>{icon}</span>
         </div>
-        <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+        <h2 className="text-sm font-semibold text-slate-700 flex-1">{title}</h2>
+        {badge && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 font-semibold">{badge}</span>
+        )}
       </div>
       <div className="p-4 sm:p-5">{children}</div>
     </div>
@@ -50,9 +63,9 @@ function Card({ icon, iconBg, iconColor, title, children }) {
 }
 
 export default function ContactFormPage() {
-  const navigate    = useNavigate()
-  const { id }      = useParams()
-  const isEdit      = !!id
+  const navigate = useNavigate()
+  const { id }   = useParams()
+  const isEdit   = !!id
 
   const [form, setForm]         = useState(INIT)
   const [errors, setErrors]     = useState({})
@@ -67,15 +80,17 @@ export default function ContactFormPage() {
       .then(r => {
         const c = r.data
         setForm({
-          title:     c.title || '',
-          firstName: c.firstName || '',
-          lastName:  c.lastName || '',
-          mobile1:   c.mobile1 || '',
-          mobile2:   c.mobile2 || '',
-          city:      c.address?.city || '',
-          state:     c.address?.state || '',
-          pincode:   c.address?.pincode || '',
-          groups:    (c.groups || []).map(g => typeof g === 'object' ? g._id : g),
+          title:         c.title || '',
+          firstName:     c.firstName || '',
+          lastName:      c.lastName || '',
+          mobile1:       c.mobile1 || '',
+          mobile2:       c.mobile2 || '',
+          personalEmail: c.email?.personal || '',
+          workEmail:     c.email?.work || '',
+          city:          c.address?.city || '',
+          state:         c.address?.state || '',
+          pincode:       c.address?.pincode || '',
+          groups:        (c.groups || []).map(g => typeof g === 'object' ? g._id : g),
         })
       })
       .catch(() => { toast.error('Contact not found'); navigate('/contacts') })
@@ -110,8 +125,12 @@ export default function ContactFormPage() {
       lastName:  form.lastName.trim(),
       mobile1:   form.mobile1,
       mobile2:   form.mobile2 || undefined,
+      email: {
+        personal: form.personalEmail.trim() || '',
+        work:     form.workEmail.trim() || '',
+      },
       address: { city: form.city.trim(), state: form.state.trim(), pincode: form.pincode },
-      groups:    form.groups,
+      groups: form.groups,
     }
     try {
       if (isEdit) { await updateContact(id, payload); toast.success('Contact updated!') }
@@ -165,14 +184,11 @@ export default function ContactFormPage() {
         {/* ── Personal Info ── */}
         <Card icon={<User size={14} />} iconBg="bg-indigo-100" iconColor="text-indigo-600" title="Personal Information">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            {/* Title buttons */}
             <div className="sm:col-span-2">
               <Field label="Title" required error={errors.title}>
                 <div className="flex gap-2 flex-wrap">
                   {TITLES.map(t => (
                     <button key={t} type="button" onClick={() => set('title', form.title === t ? '' : t)}
-                      title={`Select ${t}`}
                       className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
                         form.title === t
                           ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
@@ -184,25 +200,13 @@ export default function ContactFormPage() {
                 </div>
               </Field>
             </div>
-
-            {/* First Name */}
             <Field label="First Name" required error={errors.firstName}>
-              <Input
-                value={form.firstName}
-                onChange={e => set('firstName', e.target.value)}
-                placeholder="First Name"
-                className={`cursor-text ${err('firstName')}`}
-              />
+              <Input value={form.firstName} onChange={e => set('firstName', e.target.value)}
+                placeholder="First Name" className={`cursor-text ${err('firstName')}`} />
             </Field>
-
-            {/* Last Name */}
             <Field label="Last Name" required error={errors.lastName}>
-              <Input
-                value={form.lastName}
-                onChange={e => set('lastName', e.target.value)}
-                placeholder="Last Name"
-                className={`cursor-text ${err('lastName')}`}
-              />
+              <Input value={form.lastName} onChange={e => set('lastName', e.target.value)}
+                placeholder="Last Name" className={`cursor-text ${err('lastName')}`} />
             </Field>
           </div>
         </Card>
@@ -211,25 +215,81 @@ export default function ContactFormPage() {
         <Card icon={<Phone size={14} />} iconBg="bg-emerald-100" iconColor="text-emerald-600" title="Phone Numbers">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Primary Mobile" required error={errors.mobile1}>
-              <Input
-                value={form.mobile1}
+              <Input value={form.mobile1}
                 onChange={e => set('mobile1', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="Phone 1"
-                maxLength={10}
-                inputMode="numeric"
-                className={`cursor-text ${err('mobile1')}`}
-              />
+                placeholder="9876543210" maxLength={10} inputMode="numeric"
+                className={`cursor-text ${err('mobile1')}`} />
             </Field>
             <Field label="Alternate Mobile" error={errors.mobile2}>
-              <Input
-                value={form.mobile2}
+              <Input value={form.mobile2}
                 onChange={e => set('mobile2', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="Phone 2"
-                maxLength={10}
-                inputMode="numeric"
-                className={`cursor-text ${err('mobile2')}`}
-              />
+                placeholder="Optional" maxLength={10} inputMode="numeric"
+                className={`cursor-text ${err('mobile2')}`} />
             </Field>
+          </div>
+        </Card>
+
+        {/* ── Email ── */}
+        <Card icon={<Mail size={14} />} iconBg="bg-sky-100" iconColor="text-sky-600" title="Email Addresses" badge="optional">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Personal Email */}
+            <Field label="Personal Email" error={errors.personalEmail}
+              hint="e.g. john@gmail.com">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center">
+                    <Mail size={11} className="text-rose-500" />
+                  </div>
+                </div>
+                <Input
+                  value={form.personalEmail}
+                  onChange={e => set('personalEmail', e.target.value)}
+                  placeholder="personal@gmail.com"
+                  type="email"
+                  inputMode="email"
+                  className={`pl-10 cursor-text ${err('personalEmail')}`}
+                />
+              </div>
+            </Field>
+
+            {/* Work Email */}
+            <Field label="Work Email" error={errors.workEmail}
+              hint="e.g. john@company.com">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
+                    <Mail size={11} className="text-blue-500" />
+                  </div>
+                </div>
+                <Input
+                  value={form.workEmail}
+                  onChange={e => set('workEmail', e.target.value)}
+                  placeholder="work@company.com"
+                  type="email"
+                  inputMode="email"
+                  className={`pl-10 cursor-text ${err('workEmail')}`}
+                />
+              </div>
+            </Field>
+
+          </div>
+
+          {/* Email type legend */}
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center">
+                <Mail size={10} className="text-rose-500" />
+              </div>
+              <span className="text-xs text-slate-500">Personal</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
+                <Mail size={10} className="text-blue-500" />
+              </div>
+              <span className="text-xs text-slate-500">Work</span>
+            </div>
+            <span className="text-xs text-slate-400 ml-auto">Both fields are optional</span>
           </div>
         </Card>
 
@@ -237,45 +297,31 @@ export default function ContactFormPage() {
         <Card icon={<MapPin size={14} />} iconBg="bg-violet-100" iconColor="text-violet-600" title="Address">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="City" required error={errors.city}>
-              <Input
-                value={form.city}
-                onChange={e => set('city', e.target.value)}
-                placeholder="City"
-                className={`cursor-text ${err('city')}`}
-              />
+              <Input value={form.city} onChange={e => set('city', e.target.value)}
+                placeholder="City" className={`cursor-text ${err('city')}`} />
             </Field>
             <Field label="State" required error={errors.state}>
-              <Input
-                value={form.state}
-                onChange={e => set('state', e.target.value)}
-                placeholder="State"
-                className={`cursor-text ${err('state')}`}
-              />
+              <Input value={form.state} onChange={e => set('state', e.target.value)}
+                placeholder="State" className={`cursor-text ${err('state')}`} />
             </Field>
             <Field label="Pincode" required error={errors.pincode}>
-              <Input
-                value={form.pincode}
+              <Input value={form.pincode}
                 onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="Pincode"
-                maxLength={6}
-                inputMode="numeric"
-                className={`cursor-text ${err('pincode')}`}
-              />
+                placeholder="524001" maxLength={6} inputMode="numeric"
+                className={`cursor-text ${err('pincode')}`} />
             </Field>
           </div>
         </Card>
 
         {/* ── Groups ── */}
         {groups.length > 0 && (
-          <Card
-            icon={<span className="text-amber-600 font-bold text-xs">G</span>}
+          <Card icon={<span className="text-amber-600 font-bold text-xs">G</span>}
             iconBg="bg-amber-100" iconColor="" title="Assign to Groups">
             <div className="flex flex-wrap gap-2">
               {groups.map(g => {
                 const active = form.groups.includes(g._id)
                 return (
                   <button key={g._id} type="button" onClick={() => toggleGroup(g._id)}
-                    title={active ? `Remove from ${g.name}` : `Add to ${g.name}`}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all cursor-pointer ${
                       active ? 'text-white shadow-sm' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                     }`}
@@ -291,8 +337,7 @@ export default function ContactFormPage() {
 
         {/* ── Actions ── */}
         <div className="flex items-center justify-end gap-3 pt-2 pb-4">
-          <Button variant="outline" onClick={() => navigate('/contacts')} disabled={loading}
-            className="cursor-pointer">
+          <Button variant="outline" onClick={() => navigate('/contacts')} disabled={loading} className="cursor-pointer">
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={loading}
