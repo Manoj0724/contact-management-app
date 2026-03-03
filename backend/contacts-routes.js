@@ -3,7 +3,7 @@
 async function routes(fastify, options) {
 
   // ==========================================
-  // BULK ROUTES â€” must be BEFORE /:id
+  // BULK ROUTES – must be BEFORE /:id
   // ==========================================
 
   // BULK DELETE
@@ -140,7 +140,6 @@ async function routes(fastify, options) {
     try {
       const {
         page = 1, limit = 10, search = '',
-        sortBy = 'firstName', sortOrder = 'asc',
         favorites, group
       } = request.query;
 
@@ -167,26 +166,25 @@ async function routes(fastify, options) {
         ];
       }
 
-      const skip = (page - 1) * limit;
-const total = await Contact.countDocuments(query);
+      // Fetch all matching, sort in JS for correct favorites-first + alphabetical
+      const total = await Contact.countDocuments(query);
+      const allContacts = await Contact.find(query).lean();
 
-// Fetch ALL matching contacts, sort in JS, then paginate
-const allContacts = await Contact.find(query).lean();
+      // Sort: favorites first, then A→Z by firstName, then lastName
+      allContacts.sort((a, b) => {
+        if (b.isFavorite !== a.isFavorite) return b.isFavorite ? 1 : -1;
+        const fa = (a.firstName || '').toLowerCase();
+        const fb = (b.firstName || '').toLowerCase();
+        if (fa !== fb) return fa < fb ? -1 : 1;
+        const la = (a.lastName || '').toLowerCase();
+        const lb = (b.lastName || '').toLowerCase();
+        return la < lb ? -1 : 1;
+      });
 
-allContacts.sort((a, b) => {
-  // Favorites always first
-  if (b.isFavorite !== a.isFavorite) return b.isFavorite ? 1 : -1;
-  // Then alphabetical by firstName (case-insensitive)
-  const fa = (a.firstName || '').toLowerCase();
-  const fb = (b.firstName || '').toLowerCase();
-  if (fa !== fb) return fa < fb ? -1 : 1;
-  // Then by lastName
-  const la = (a.lastName || '').toLowerCase();
-  const lb = (b.lastName || '').toLowerCase();
-  return la < lb ? -1 : 1;
-});
+      // Paginate after sorting
+      const skip = (Number(page) - 1) * Number(limit);
+      const contacts = allContacts.slice(skip, skip + Number(limit));
 
-const contacts = allContacts.slice(parseInt(skip), parseInt(skip) + parseInt(limit));
       return {
         contacts,
         currentPage:   parseInt(page),
@@ -274,4 +272,3 @@ const contacts = allContacts.slice(parseInt(skip), parseInt(skip) + parseInt(lim
 }
 
 module.exports = routes;
-
