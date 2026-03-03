@@ -5,7 +5,7 @@ import {
   Search, Plus, Star, Trash2, Edit2, Users,
   ChevronLeft, ChevronRight, SortAsc, SortDesc,
   CheckSquare, Square, UserCheck, X, Phone, MapPin, Mail,
-  RefreshCw, LayoutGrid, List, Download, AlertTriangle, Briefcase
+  RefreshCw, LayoutGrid, List, Download, AlertTriangle, Briefcase, SlidersHorizontal
 } from 'lucide-react'
 import {
   getContacts, deleteContact, bulkDeleteContacts,
@@ -16,6 +16,7 @@ import { exportToCSV, getInitials, getAvatarColor } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import AdvancedSearch from '@/components/AdvancedSearch'
 
 function Avatar({ contact, size = 'md' }) {
   const sz = size === 'lg' ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm'
@@ -298,6 +299,18 @@ function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onTogg
   )
 }
 
+// ─── Filter Pill ─────────────────────────────────────────────────────────────
+function Pill({ label, onRemove }) {
+  return (
+    <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700">
+      {label}
+      <button onClick={onRemove} className="hover:text-red-500 transition-colors ml-0.5">
+        <X size={11}/>
+      </button>
+    </span>
+  )
+}
+
 function ListSkeleton() {
   return Array.from({ length: 5 }).map((_, i) => (
     <tr key={i} className="border-b border-slate-100">
@@ -348,10 +361,15 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
   const [selected, setSelected]     = useState([])
   const [viewMode, setViewMode]     = useState('list')
 
+  const [advFilters, setAdvFilters]       = useState({ city:'', state:'', groupId:'', hasEmail:false, hasMobile2:false, isFavorite:false, hasPhoto:false, title:'' })
+  const [showAdvSearch, setShowAdvSearch] = useState(false)
+
   const [deleteDialog, setDeleteDialog]         = useState({ open: false, contact: null, loading: false })
   const [bulkDeleteDialog, setBulkDeleteDialog] = useState({ open: false, loading: false })
   const [assignDialog, setAssignDialog]         = useState(false)
   const searchTimer = useRef(null)
+
+  const advFilterCount = Object.entries(advFilters).filter(([,v]) => v !== '' && v !== false).length
 
   const fetchContacts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -361,6 +379,15 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
       if (search.trim())               params.search    = search.trim()
       if (groupFilter === 'favorites') params.favorites = 'true'
       else if (groupFilter)            params.group     = groupFilter
+      // Advanced filters
+      if (advFilters.city)       params.city       = advFilters.city
+      if (advFilters.state)      params.state      = advFilters.state
+      if (advFilters.groupId)    params.group      = advFilters.groupId
+      if (advFilters.hasEmail)   params.hasEmail   = 'true'
+      if (advFilters.hasMobile2) params.hasMobile2 = 'true'
+      if (advFilters.isFavorite) params.favorites  = 'true'
+      if (advFilters.hasPhoto)   params.hasPhoto   = 'true'
+      if (advFilters.title)      params.title      = advFilters.title
       const res  = await getContacts(params)
       const data = res.data
       const list = data.contacts || []
@@ -372,7 +399,7 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
       onTotalChange?.(count)
     } catch { toast.error('Failed to load contacts') }
     finally { setLoading(false); setRefreshing(false) }
-  }, [page, limit, search, sortBy, sortOrder, groupFilter, onTotalChange])
+  }, [page, limit, search, sortBy, sortOrder, groupFilter, onTotalChange, advFilters])
 
   useEffect(() => { fetchContacts() }, [fetchContacts])
   useEffect(() => { setPage(1) }, [search, sortBy, sortOrder, groupFilter, limit])
@@ -500,6 +527,20 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
             </button>
           )}
         </div>
+        <button onClick={() => setShowAdvSearch(s => !s)}
+          className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-all shrink-0 ${
+            showAdvSearch || advFilterCount > 0
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'border-slate-200 text-slate-600 hover:border-blue-300 bg-white'
+          }`}>
+          <SlidersHorizontal size={15}/>
+          <span className="hidden sm:inline">Filters</span>
+          {advFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+              {advFilterCount}
+            </span>
+          )}
+        </button>
         <span className="text-sm text-slate-500 shrink-0 hidden sm:block">{total} contacts</span>
         <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white shrink-0">
           <button onClick={() => setViewMode('grid')}
@@ -512,6 +553,34 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
           </button>
         </div>
       </div>
+
+      {/* Advanced Search Panel */}
+      {showAdvSearch && (
+        <AdvancedSearch
+          filters={advFilters}
+          onChange={f => { setAdvFilters(f); setPage(1) }}
+          onClose={() => setShowAdvSearch(false)}
+        />
+      )}
+
+      {/* Active filter pills */}
+      {advFilterCount > 0 && !showAdvSearch && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-slate-400 font-medium">Active:</span>
+          {advFilters.title     && <Pill label={`Title: ${advFilters.title}`}     onRemove={() => { setAdvFilters(f=>({...f,title:''}));     setPage(1) }}/>}
+          {advFilters.state     && <Pill label={`State: ${advFilters.state}`}     onRemove={() => { setAdvFilters(f=>({...f,state:''}));     setPage(1) }}/>}
+          {advFilters.city      && <Pill label={`City: ${advFilters.city}`}       onRemove={() => { setAdvFilters(f=>({...f,city:''}));      setPage(1) }}/>}
+          {advFilters.groupId   && <Pill label="Group filter"                     onRemove={() => { setAdvFilters(f=>({...f,groupId:''}));   setPage(1) }}/>}
+          {advFilters.hasEmail  && <Pill label="Has Email"                        onRemove={() => { setAdvFilters(f=>({...f,hasEmail:false}));  setPage(1) }}/>}
+          {advFilters.hasMobile2&& <Pill label="Has Alt Mobile"                  onRemove={() => { setAdvFilters(f=>({...f,hasMobile2:false}));setPage(1) }}/>}
+          {advFilters.isFavorite&& <Pill label="Favorites"                       onRemove={() => { setAdvFilters(f=>({...f,isFavorite:false}));setPage(1) }}/>}
+          {advFilters.hasPhoto  && <Pill label="Has Photo"                        onRemove={() => { setAdvFilters(f=>({...f,hasPhoto:false}));  setPage(1) }}/>}
+          <button onClick={() => { setAdvFilters({ city:'', state:'', groupId:'', hasEmail:false, hasMobile2:false, isFavorite:false, hasPhoto:false, title:'' }); setPage(1) }}
+            className="text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Bulk Action Bar */}
       {selected.length > 0 && (

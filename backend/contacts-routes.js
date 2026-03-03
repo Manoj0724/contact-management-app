@@ -144,9 +144,20 @@ async function routes(fastify, options) {
         favorites, group
       } = request.query;
 
+      const { city, state, hasEmail, hasMobile2, hasPhoto, title } = request.query;
+
       const query = {};
-      if (group) query.groups = group;
-      if (favorites === 'true') query.isFavorite = true;
+      if (group)                 query.groups = group;
+      if (favorites === 'true')  query.isFavorite = true;
+      if (title)                 query.title = title;
+      if (city)                  query['address.city']  = new RegExp(city, 'i');
+      if (state)                 query['address.state'] = new RegExp(state, 'i');
+      if (hasMobile2 === 'true') query.mobile2 = { $exists: true, $ne: '' };
+      if (hasPhoto === 'true')   query.photo   = { $exists: true, $ne: '' };
+      if (hasEmail === 'true')   query.$or = [
+        { 'email.personal': { $exists: true, $ne: '' } },
+        { 'email.work':     { $exists: true, $ne: '' } }
+      ];
       if (search) {
         query.$or = [
           { firstName: new RegExp(search, 'i') },
