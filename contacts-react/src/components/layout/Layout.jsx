@@ -22,29 +22,9 @@ import GroupDialog from '@/components/groups/GroupDialog'
 import ThemeToggle from '@/components/ThemeToggle'
 
 // ─── Sidebar Nav Content ──────────────────────────────────────────────────────
-function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreateGroup, onEditGroup, onDeleteGroup }) {
+function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreateGroup, onEditGroup, onDeleteGroup, onExport }) {
   const navigate = useNavigate()
   const go = (fn) => { fn(); onClose() }
-
-  const navItem = (to, icon, label, onClick, isActive) => (
-    <NavLink to={to}
-      onClick={() => go(onClick || (() => {}))}
-      className={({ isActive: routeActive }) => {
-        const active = isActive !== undefined ? isActive : routeActive
-        return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-          active
-            ? 'bg-white/15 text-white shadow-sm'
-            : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-        }`
-      }}>
-      <span className={`flex items-center justify-center w-7 h-7 rounded-lg ${
-        'bg-white/10'
-      }`}>
-        {icon}
-      </span>
-      <span className="flex-1">{label}</span>
-    </NavLink>
-  )
 
   return (
     <div className="flex flex-col h-full"
@@ -183,6 +163,17 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
         </div>
       </nav>
 
+      {/* Export CSV — sidebar only */}
+      <div className="px-3 pb-2 border-t border-white/10 pt-3">
+        <button onClick={onExport}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
+          <span className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+            <Download size={15} className="text-emerald-300" />
+          </span>
+          <span>Export CSV</span>
+        </button>
+      </div>
+
       {/* Footer */}
       <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/5">
@@ -239,6 +230,7 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
     onCreateGroup: () => setGroupDialog({ open: true, group: null }),
     onEditGroup: (g) => setGroupDialog({ open: true, group: g }),
     onDeleteGroup: (g) => setDeleteTarget(g),
+    onExport: handleExport,
   }
 
   return (
