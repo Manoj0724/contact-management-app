@@ -199,7 +199,7 @@ function ContactListRow({ contact, selected, onSelect, onEdit, onDelete, onToggl
           <div className="text-xs text-slate-400 mt-0.5 ml-5">{contact.address.pincode}</div>
         )}
       </td>
-      <td className="px-3 py-3 w-28" onClick={e => e.stopPropagation()}>
+      <td className="px-3 py-3 w-28 hidden sm:table-cell" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={() => onToggleFavorite(contact)}
             className={`p-1.5 rounded-lg transition-colors ${contact.isFavorite ? 'text-amber-400 hover:bg-amber-50' : 'text-slate-300 hover:text-amber-400 hover:bg-amber-50'}`}>
@@ -625,7 +625,7 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
                 <th className="px-3 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:table-cell">PHONE</th>
                 <th className="px-3 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">EMAIL</th>
                 <th className="px-3 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">ADDRESS</th>
-                <th className="px-3 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">ACTIONS</th>
+                <th className="px-3 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:table-cell">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
