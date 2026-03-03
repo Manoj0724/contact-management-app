@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, User, Phone, MapPin, Mail, Camera, X, Upload } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, User, Phone, MapPin, Mail, Camera, X, Upload, Eye } from 'lucide-react'
 import { getContact, createContact, updateContact, getGroups } from '@/services/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -66,21 +66,19 @@ function Card({ icon, iconBg, iconColor, title, badge, children }) {
 function PhotoUpload({ value, firstName, onChange }) {
   const inputRef = useRef()
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState(value || '')
+  const [preview, setPreview]     = useState(value || '')
+  const [viewing, setViewing]     = useState(false)
 
   const handleFile = async (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image file')
-    if (file.size > 5 * 1024 * 1024) return toast.error('Image too large — max 5MB')
 
     setUploading(true)
     try {
-      // Preview immediately
       const reader = new FileReader()
       reader.onload = e => setPreview(e.target.result)
       reader.readAsDataURL(file)
 
-      // Upload to Cloudinary
       const formData = new FormData()
       formData.append('file', file)
       formData.append('upload_preset', UPLOAD_PRESET)
@@ -97,7 +95,7 @@ function PhotoUpload({ value, firstName, onChange }) {
         toast.success('Photo uploaded!')
       } else {
         console.error('Cloudinary error:', JSON.stringify(data))
-        toast.error(data.error?.message || 'Upload failed — check Cloudinary preset is set to Unsigned')
+        toast.error(data.error?.message || 'Upload failed — make sure preset is Unsigned in Cloudinary')
         setPreview(value || '')
       }
     } catch {
@@ -111,7 +109,6 @@ function PhotoUpload({ value, firstName, onChange }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative group">
-        {/* Avatar / Photo */}
         <div className={`w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shadow-md ${!preview ? getAvatarColor(firstName || 'A') : ''}`}>
           {preview
             ? <img src={preview} alt="Contact" className="w-full h-full object-cover" />
@@ -119,16 +116,15 @@ function PhotoUpload({ value, firstName, onChange }) {
           }
         </div>
 
-        {/* Upload overlay */}
         <button type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => preview ? setViewing(true) : inputRef.current?.click()}
           className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
           {uploading
             ? <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <Camera size={20} className="text-white" />}
+            : preview ? <Eye size={20} className="text-white" /> : <Camera size={20} className="text-white" />
+          }
         </button>
 
-        {/* Remove button */}
         {preview && !uploading && (
           <button type="button" onClick={removePhoto}
             className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors">
@@ -146,10 +142,30 @@ function PhotoUpload({ value, firstName, onChange }) {
           ? <><span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Uploading...</>
           : <><Upload size={14} /> {preview ? 'Change Photo' : 'Upload Photo'}</>}
       </button>
-      <p className="text-xs text-slate-400">JPG, PNG, WebP — max 5MB</p>
+      <p className="text-xs text-slate-400">Any format (JPG, PNG, HEIC…) • hover photo to view</p>
+
+      {viewing && preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          onClick={() => setViewing(false)}>
+          <button
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white transition-colors"
+            onClick={() => setViewing(false)}>
+            <X size={20} />
+          </button>
+          <img src={preview} alt="Contact photo"
+            className="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+            onClick={e => e.stopPropagation()} />
+          <button
+            onClick={e => { e.stopPropagation(); setViewing(false); setTimeout(() => inputRef.current?.click(), 100) }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-xl border border-white/20 backdrop-blur-sm transition-colors">
+            <Camera size={14} /> Change Photo
+          </button>
+        </div>
+      )}
     </div>
   )
 }
+
 
 export default function ContactFormPage() {
   const navigate = useNavigate()
