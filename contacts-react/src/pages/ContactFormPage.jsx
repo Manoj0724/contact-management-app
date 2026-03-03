@@ -254,6 +254,7 @@ function PhotoUpload({ value, firstName, onChange }) {
           ? <><span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Uploading...</>
           : <><Upload size={14} /> {preview ? 'Change Photo' : 'Upload Photo'}</>}
       </button>
+      <p className="text-xs text-slate-400">Any format • crops to circle automatically</p>
 
       {cropSrc && (
         <CropModal src={cropSrc} onDone={uploadFile} onCancel={() => setCropSrc(null)} />
@@ -443,7 +444,7 @@ export default function ContactFormPage() {
             <Field label="Primary Mobile" required error={errors.mobile1}>
               <Input value={form.mobile1}
                 onChange={e => set('mobile1', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="9876543210" maxLength={10} inputMode="numeric"
+                placeholder="Mobile number" maxLength={10} inputMode="numeric"
                 className={`cursor-text ${err('mobile1')}`} />
             </Field>
             <Field label="Alternate Mobile" error={errors.mobile2}>
@@ -466,7 +467,7 @@ export default function ContactFormPage() {
                   </div>
                 </div>
                 <Input value={form.personalEmail} onChange={e => set('personalEmail', e.target.value)}
-                  placeholder="personal@gmail.com" type="email" inputMode="email"
+                  placeholder="Personal email" type="email" inputMode="email"
                   className={`pl-10 cursor-text ${err('personalEmail')}`} />
               </div>
             </Field>
@@ -478,7 +479,7 @@ export default function ContactFormPage() {
                   </div>
                 </div>
                 <Input value={form.workEmail} onChange={e => set('workEmail', e.target.value)}
-                  placeholder="work@company.com" type="email" inputMode="email"
+                  placeholder="Work email" type="email" inputMode="email"
                   className={`pl-10 cursor-text ${err('workEmail')}`} />
               </div>
             </Field>
@@ -499,7 +500,7 @@ export default function ContactFormPage() {
             <Field label="Pincode" required error={errors.pincode}>
               <Input value={form.pincode}
                 onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="524001" maxLength={6} inputMode="numeric"
+                placeholder="Pincode" maxLength={6} inputMode="numeric"
                 className={`cursor-text ${err('pincode')}`} />
             </Field>
           </div>
