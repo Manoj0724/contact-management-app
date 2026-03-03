@@ -139,11 +139,11 @@ function EmailBadge({ email, type }) {
 }
 
 // ─── List Row ─────────────────────────────────────────────────────────────────
-function ContactListRow({ contact, selected, onSelect, onEdit, onDelete, onToggleFavorite }) {
+function ContactListRow({ contact, selected, onSelect, onEdit, onDelete, onToggleFavorite, onView }) {
   const hasEmail = contact.email?.personal || contact.email?.work
   return (
-    <tr className={`border-b border-slate-100 hover:bg-slate-50/80 transition-colors group ${selected ? 'bg-blue-50' : ''}`}>
-      <td className="pl-4 pr-2 py-3 w-10 align-top pt-4">
+    <tr onClick={() => onView(contact._id)} className={`border-b border-slate-100 hover:bg-slate-50/80 transition-colors group cursor-pointer ${selected ? 'bg-blue-50' : ''}`}>
+      <td className="pl-4 pr-2 py-3 w-10 align-top pt-4" onClick={e => e.stopPropagation()}>
         <button onClick={() => onSelect(contact._id)}
           className={`transition-all ${selected ? 'text-blue-500 opacity-100' : 'opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-500'}`}>
           {selected ? <CheckSquare size={17} className="text-blue-500" /> : <Square size={17} />}
@@ -192,7 +192,7 @@ function ContactListRow({ contact, selected, onSelect, onEdit, onDelete, onToggl
           <div className="text-xs text-slate-400 mt-0.5 ml-5">{contact.address.pincode}</div>
         )}
       </td>
-      <td className="px-3 py-3 w-28">
+      <td className="px-3 py-3 w-28" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={() => onToggleFavorite(contact)}
             className={`p-1.5 rounded-lg transition-colors ${contact.isFavorite ? 'text-amber-400 hover:bg-amber-50' : 'text-slate-300 hover:text-amber-400 hover:bg-amber-50'}`}>
@@ -213,21 +213,21 @@ function ContactListRow({ contact, selected, onSelect, onEdit, onDelete, onToggl
 }
 
 // ─── Grid Card ────────────────────────────────────────────────────────────────
-function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onToggleFavorite }) {
+function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onToggleFavorite, onView }) {
   return (
-    <div className={`bg-white border rounded-2xl p-4 hover:shadow-md transition-all group relative ${selected ? 'border-blue-300 shadow-blue-100 shadow-sm' : 'border-slate-200'}`}>
+    <div onClick={() => onView(contact._id)} className={`bg-white border rounded-2xl p-4 hover:shadow-md transition-all group relative cursor-pointer ${selected ? 'border-blue-300 shadow-blue-100 shadow-sm' : 'border-slate-200'}`}>
       <div className={`absolute top-3 left-3 transition-opacity ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        <button onClick={() => onSelect(contact._id)}
+        <button onClick={e => { e.stopPropagation(); onSelect(contact._id) }}
           className={`transition-colors ${selected ? 'text-blue-500' : 'text-slate-300 hover:text-blue-500'}`}>
           {selected ? <CheckSquare size={16} className="text-blue-500" /> : <Square size={16} />}
         </button>
       </div>
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(contact._id)}
+        <button onClick={e => { e.stopPropagation(); onEdit(contact._id) }}
           className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
           <Edit2 size={14} />
         </button>
-        <button onClick={() => onDelete(contact)}
+        <button onClick={e => { e.stopPropagation(); onDelete(contact) }}
           className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
           <Trash2 size={14} />
         </button>
@@ -284,7 +284,7 @@ function ContactGridCard({ contact, selected, onSelect, onEdit, onDelete, onTogg
           </div>
         )}
       </div>
-      <button onClick={() => onToggleFavorite(contact)}
+      <button onClick={e => { e.stopPropagation(); onToggleFavorite(contact) }}
         className={`absolute bottom-3 right-3 p-1 rounded-lg transition-colors ${contact.isFavorite ? 'text-amber-400' : 'text-slate-200 hover:text-amber-300'}`}>
         <Star size={14} className={contact.isFavorite ? 'fill-amber-400' : ''} />
       </button>
@@ -575,6 +575,7 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
                 <ContactListRow key={contact._id} contact={contact}
                   selected={selected.includes(contact._id)}
                   onSelect={toggleSelect}
+                  onView={id => navigate(`/contacts/view/${id}`)}
                   onEdit={id => navigate(`/contacts/edit/${id}`)}
                   onDelete={c => setDeleteDialog({ open: true, contact: c, loading: false })}
                   onToggleFavorite={handleToggleFavorite}
@@ -604,6 +605,7 @@ export default function ContactsPage({ groupFilter, groupName, onGroupFilter, on
                 <ContactGridCard key={contact._id} contact={contact}
                   selected={selected.includes(contact._id)}
                   onSelect={toggleSelect}
+                  onView={id => navigate(`/contacts/view/${id}`)}
                   onEdit={id => navigate(`/contacts/edit/${id}`)}
                   onDelete={c => setDeleteDialog({ open: true, contact: c, loading: false })}
                   onToggleFavorite={handleToggleFavorite}

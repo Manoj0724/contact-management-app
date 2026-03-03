@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import Layout from '@/components/layout/Layout'
 import ContactsPage from '@/pages/ContactsPage'
 import ContactFormPage from '@/pages/ContactFormPage'
+import ContactDetailPage from '@/pages/ContactDetailPage'
 import BulkUploadPage from '@/pages/BulkUploadPage'
 
 export default function App() {
@@ -27,10 +28,11 @@ export default function App() {
               onTotalChange={setTotalContacts}
             />
           } />
-          <Route path="/contacts/new"      element={<ContactFormPage key="new" />} />
-          <Route path="/contacts/edit/:id" element={<ContactFormPage key="edit" />} />
-          <Route path="/bulk-upload"       element={<BulkUploadPage />} />
-          <Route path="*"                  element={<Navigate to="/contacts" replace />} />
+          <Route path="/contacts/new"        element={<ContactFormPage key="new" />} />
+          <Route path="/contacts/edit/:id"   element={<ContactFormPage key="edit" />} />
+          <Route path="/contacts/view/:id"   element={<ContactDetailPage />} />
+          <Route path="/bulk-upload"         element={<BulkUploadPage />} />
+          <Route path="*"                    element={<Navigate to="/contacts" replace />} />
         </Routes>
       </Layout>
     </BrowserRouter>
