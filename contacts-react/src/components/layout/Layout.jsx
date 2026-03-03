@@ -180,10 +180,11 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
             CP
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-white text-xs font-semibold leading-tight">ContactsPro</p>
             <p className="text-blue-300/50 text-[10px]">Version 2.0.0</p>
           </div>
+          <ThemeToggle />
         </div>
       </div>
     </div>
@@ -267,9 +268,6 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
           </div>
 
           <div className="flex-1" />
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
         </header>
 
         {/* Page */}
