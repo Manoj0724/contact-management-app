@@ -19,11 +19,32 @@ import {
   DialogTitle, DialogFooter
 } from '@/components/ui/dialog'
 import GroupDialog from '@/components/groups/GroupDialog'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // ─── Sidebar Nav Content ──────────────────────────────────────────────────────
-function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreateGroup, onEditGroup, onDeleteGroup, onExport }) {
+function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreateGroup, onEditGroup, onDeleteGroup }) {
   const navigate = useNavigate()
   const go = (fn) => { fn(); onClose() }
+
+  const navItem = (to, icon, label, onClick, isActive) => (
+    <NavLink to={to}
+      onClick={() => go(onClick || (() => {}))}
+      className={({ isActive: routeActive }) => {
+        const active = isActive !== undefined ? isActive : routeActive
+        return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+          active
+            ? 'bg-white/15 text-white shadow-sm'
+            : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+        }`
+      }}>
+      <span className={`flex items-center justify-center w-7 h-7 rounded-lg ${
+        'bg-white/10'
+      }`}>
+        {icon}
+      </span>
+      <span className="flex-1">{label}</span>
+    </NavLink>
+  )
 
   return (
     <div className="flex flex-col h-full"
@@ -41,7 +62,7 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto overflow-x-visible">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
 
         {/* Main nav */}
         <div className="mb-2">
@@ -125,11 +146,10 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
           )}
 
           {groups.map(g => (
-            <div key={g._id} className="relative flex items-center group/g">
-              {/* Group button */}
+            <div key={g._id} className="flex items-center group/g rounded-xl overflow-hidden">
               <button
                 onClick={() => go(() => { onGroupFilter(g._id, g.name); navigate('/contacts') })}
-                className={`flex-1 flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-150 min-w-0 rounded-xl pr-9 ${
+                className={`flex-1 flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-150 min-w-0 rounded-xl ${
                   activeGroupId === g._id
                     ? 'bg-white/15 text-white border border-white/10'
                     : 'text-blue-100/70 hover:bg-white/8 hover:text-white'
@@ -143,32 +163,18 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
                   {g.contactCount || 0}
                 </span>
               </button>
-
-              {/* ⋮ dropdown — absolute so it never pushes layout */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button
-                    onClick={e => e.stopPropagation()}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 opacity-0 group-hover/g:opacity-100 text-blue-300/50 hover:text-white transition-all rounded-lg hover:bg-white/10 focus:opacity-100 focus:outline-none">
+                  <button className="p-1.5 opacity-0 group-hover/g:opacity-100 text-blue-300/50 hover:text-white transition-all mr-1 rounded-lg hover:bg-white/10">
                     <MoreVertical size={13} />
                   </button>
                 </DropdownMenuTrigger>
-
-                {/* FIX: high z-index + white bg so it renders above sidebar */}
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={4}
-                  collisionPadding={8}
-                  className="w-36 z-[9999] bg-white border border-slate-200 shadow-xl rounded-xl p-1">
-                  <DropdownMenuItem
-                    onClick={() => onEditGroup(g)}
-                    className="flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg px-2 py-2 cursor-pointer">
-                    <Edit2 size={13} /> Rename
+                <DropdownMenuContent align="end" className="w-36">
+                  <DropdownMenuItem onClick={() => onEditGroup(g)}>
+                    <Edit2 size={13} className="mr-2" /> Rename
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDeleteGroup(g)}
-                    className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 py-2 cursor-pointer focus:text-red-500 focus:bg-red-50">
-                    <Trash2 size={13} /> Delete
+                  <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => onDeleteGroup(g)}>
+                    <Trash2 size={13} className="mr-2" /> Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -176,17 +182,6 @@ function SidebarContent({ groups, activeGroupId, onGroupFilter, onClose, onCreat
           ))}
         </div>
       </nav>
-
-      {/* Export CSV */}
-      <div className="px-4 pb-2">
-        <button
-          onClick={onExport}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-blue-200 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
-        >
-          <Download size={15} className="shrink-0" />
-          <span>Export CSV</span>
-        </button>
-      </div>
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-white/10">
@@ -243,21 +238,20 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
     onClose: () => setSidebarOpen(false),
     onCreateGroup: () => setGroupDialog({ open: true, group: null }),
     onEditGroup: (g) => setGroupDialog({ open: true, group: g }),
-    onExport: handleExport,
     onDeleteGroup: (g) => setDeleteTarget(g),
   }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
 
-      {/* Desktop sidebar — overflow-visible so dropdown escapes it */}
-      <aside className="hidden md:flex w-64 flex-shrink-0 flex-col shadow-xl overflow-visible">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 flex-shrink-0 flex-col shadow-xl">
         <SidebarContent {...sidebarProps} />
       </aside>
 
       {/* Mobile sidebar drawer */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64 border-0">
+        <SheetContent side="left" className="p-0 w-64 border-0 dark:bg-[#0d1117]">
           <SidebarContent {...sidebarProps} />
         </SheetContent>
       </Sheet>
@@ -266,7 +260,7 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex items-center gap-3 px-4 md:px-6 h-14 bg-white border-b border-slate-200 flex-shrink-0 shadow-sm">
+        <header className="flex items-center gap-3 px-4 md:px-6 h-14 bg-white dark:bg-[#0d1117] border-b border-slate-200 dark:border-slate-800 flex-shrink-0 shadow-sm dark:shadow-slate-900 transition-colors">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-500">
             <Menu size={20} />
           </Button>
@@ -282,16 +276,23 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
 
           <div className="flex-1" />
 
+          {/* Export button */}
+          <Button onClick={handleExport} variant="outline" size="sm"
+            className="hidden sm:flex gap-2 text-slate-600 h-8 text-xs border-slate-200 hover:border-blue-300 hover:text-blue-600">
+            <Download size={13} /> Export CSV
+          </Button>
 
+          {/* Theme Toggle */}
+          <ThemeToggle />
         </header>
 
         {/* Page */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 fade-in scrollbar-thin">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 fade-in bg-slate-50 dark:bg-[#0a0f1e] transition-colors">
           {children}
         </main>
       </div>
 
-      {/* Group create / edit dialog */}
+      {/* Group dialogs */}
       <GroupDialog
         open={groupDialog.open}
         group={groupDialog.group}
@@ -299,9 +300,9 @@ export default function Layout({ children, onGroupFilter, activeGroupId, totalCo
         onSave={() => { fetchGroups(); setGroupDialog({ open: false, group: null }) }}
       />
 
-      {/* Delete group confirm dialog */}
+      {/* Delete group confirm */}
       <Dialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-sm z-[9999]">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Delete Group</DialogTitle></DialogHeader>
           <p className="text-sm text-slate-600 py-2">
             Delete <strong>"{deleteTarget?.name}"</strong>? Contacts won't be deleted, just unassigned.
